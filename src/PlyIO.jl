@@ -139,8 +139,8 @@ function ply_type(type_name)
     elseif type_name == "ushort" || type_name == "uint16";  return UInt16
     elseif type_name == "uint"   || type_name == "uint32";  return UInt32
     elseif type_name == "uint64";                           return UInt64
-    elseif type_name == "float";                            return Float32
-    elseif type_name == "double";                           return Float64
+    elseif type_name == "float"  || type_name == "float32"; return Float32
+    elseif type_name == "double" || type_name == "float64"; return Float64
     else
         error("type_name $type_name unrecognized/unimplemented")
     end
@@ -267,9 +267,8 @@ function read_ply_header(ply_file)
 end
 
 
-function read_ply_model(file_name)
-    ply = open(file_name, "r")
-    elements, format = read_ply_header(ply)
+function read_ply_model(io::IO)
+    elements, format = read_ply_header(io)
     @assert format != Format_binary_big
     for element in elements
         for prop in element.properties
@@ -278,13 +277,13 @@ function read_ply_model(file_name)
         if format == Format_ascii
             for i = 1:length(element)
                 for prop in element.properties
-                    read_ascii_value!(ply, prop, i)
+                    read_ascii_value!(io, prop, i)
                 end
             end
         else # format == Format_binary_little
             for i = 1:length(element)
                 for prop in element.properties
-                    read_binary_value!(ply, prop, i)
+                    read_binary_value!(io, prop, i)
                 end
             end
         end
@@ -292,6 +291,11 @@ function read_ply_model(file_name)
     Ply(elements)
 end
 
+function read_ply_model(file_name::AbstractString)
+    open(file_name, "r") do fid
+        read_ply_model(fid)
+    end
+end
 
 function write_ply_header(ply, stream::IO, ascii)
     println(stream, "ply")
