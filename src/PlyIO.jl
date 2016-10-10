@@ -30,6 +30,13 @@ type ListProperty{S,T} <: PlyProperty
     data::Vector{T}
 end
 ListProperty{S,T}(name, ::Type{S}, ::Type{T}) = ListProperty(String(name), ones(S,1), Vector{T}())
+function ListProperty(name, a::Array)
+    prop = ListProperty(String(name), ones(Int32,1), Vector{eltype(a[1])}())
+    for ai in a
+        push!(prop, ai)
+    end
+    prop
+end
 
 function Base.resize!(prop::ListProperty, len)
     resize!(prop.start_inds, len+1)
