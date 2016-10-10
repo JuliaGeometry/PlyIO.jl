@@ -143,16 +143,16 @@ function ply_type(type_name)
     end
 end
 
-ply_type_name(::Type{UInt8})    = "uint8"
-ply_type_name(::Type{UInt16})   = "uint16"
-ply_type_name(::Type{UInt32})   = "uint32"
+ply_type_name(::Type{UInt8})    = "uchar"
+ply_type_name(::Type{UInt16})   = "ushort"
+ply_type_name(::Type{UInt32})   = "uint"
 ply_type_name(::Type{UInt64})   = "uint64"
-ply_type_name(::Type{Int8})     = "int8"
-ply_type_name(::Type{Int16})    = "int16"
-ply_type_name(::Type{Int32})    = "int32"
+ply_type_name(::Type{Int8})     = "char"
+ply_type_name(::Type{Int16})    = "short"
+ply_type_name(::Type{Int32})    = "int"
 ply_type_name(::Type{Int64})    = "int64"
-ply_type_name(::Type{Float32})  = "float32"
-ply_type_name(::Type{Float64})  = "float64"
+ply_type_name(::Type{Float32})  = "float"
+ply_type_name(::Type{Float64})  = "double"
 
 
 
