@@ -84,6 +84,15 @@ function Base.show(io::IO, elem::Element)
     print(io, "Element \"$(elem.name)\" of length $(length(elem)) with properties [$prop_names]")
 end
 
+function Base.getindex(element::Element, prop_name)
+    for prop in element.properties
+        if prop.name == prop_name
+            return prop
+        end
+    end
+    error("property $prop_name not found in Ply element $(element.name)")
+end
+
 
 #--------------------------------------------------
 type Ply
@@ -102,10 +111,6 @@ function Base.show(io::IO, ply::Ply)
     print(io, "Ply with elements [$(join(["\"$(elem.name)\"" for elem in ply.elements], ", "))]")
 end
 
-
-#--------------------------------------------------
-
-
 function Base.getindex(ply::Ply, elem_name)
     for elem in ply.elements
         if elem.name == elem_name
@@ -115,14 +120,6 @@ function Base.getindex(ply::Ply, elem_name)
     error("$elem_name not found in Ply element list")
 end
 
-function Base.getindex(element::Element, prop_name)
-    for prop in element.properties
-        if prop.name == prop_name
-            return prop
-        end
-    end
-    error("property $prop_name not found in Ply element $(element.name)")
-end
 
 
 #-------------------------------------------------------------------------------
@@ -219,7 +216,7 @@ end
 
 
 
-function read_ply_header(ply_file)
+function read_header(ply_file)
     @assert readline(ply_file) == "ply\n"
     element_name = ""
     element_numel = 0
@@ -267,8 +264,8 @@ function read_ply_header(ply_file)
 end
 
 
-function read_ply_model(io::IO)
-    elements, format = read_ply_header(io)
+function load_ply(io::IO)
+    elements, format = read_header(io)
     @assert format != Format_binary_big
     for element in elements
         for prop in element.properties
@@ -291,13 +288,13 @@ function read_ply_model(io::IO)
     Ply(elements)
 end
 
-function read_ply_model(file_name::AbstractString)
+function load_ply(file_name::AbstractString)
     open(file_name, "r") do fid
-        read_ply_model(fid)
+        load_ply(fid)
     end
 end
 
-function write_ply_header(ply, stream::IO, ascii)
+function write_header(ply, stream::IO, ascii)
     println(stream, "ply")
     if ascii
         println(stream, "format ascii 1.0")
@@ -318,8 +315,8 @@ function write_ply_header(ply, stream::IO, ascii)
     println(stream, "end_header")
 end
 
-function write_ply_model(ply, stream::IO; ascii::Bool=false)
-    write_ply_header(ply, stream, ascii)
+function save_ply(ply, stream::IO; ascii::Bool=false)
+    write_header(ply, stream, ascii)
     if ascii
         for element in ply
             for i=1:length(element)
@@ -341,9 +338,9 @@ function write_ply_model(ply, stream::IO; ascii::Bool=false)
     end
 end
 
-function write_ply_model(ply, file_name::AbstractString; kwargs...)
+function save_ply(ply, file_name::AbstractString; kwargs...)
     open(file_name, "w") do fid
-        write_ply_model(ply, fid; kwargs...)
+        save_ply(ply, fid; kwargs...)
     end
 end
 

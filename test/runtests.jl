@@ -1,8 +1,7 @@
 using PlyIO
 using Base.Test
 
-import PlyIO: read_ply_model, write_ply_model, Ply, Element, ArrayProperty, ListProperty
-
+import PlyIO: load_ply, save_ply, Ply, Element, ArrayProperty, ListProperty
 
 @testset "roundtrip" begin
     @testset "ascii=$test_ascii" for test_ascii in [true, false]
@@ -12,9 +11,8 @@ import PlyIO: read_ply_model, write_ply_model, Ply, Element, ArrayProperty, List
 
         x = collect(Float64, 1:nverts)
         y = collect(Int16, 1:nverts)
-        push!(ply, Element("vertex",
-                        ArrayProperty("x", x),
-                        ArrayProperty("y", y)))
+        push!(ply, Element("vertex", ArrayProperty("x", x),
+                                     ArrayProperty("y", y)))
 
         # Some triangular faces
         vertex_index = ListProperty("vertex_index", Int32, Int32)
@@ -23,9 +21,9 @@ import PlyIO: read_ply_model, write_ply_model, Ply, Element, ArrayProperty, List
         end
         push!(ply, Element("face", vertex_index))
 
-        write_ply_model(ply, "roundtrip_test.ply", ascii=test_ascii)
+        save_ply(ply, "roundtrip_test.ply", ascii=test_ascii)
 
-        newply = read_ply_model("roundtrip_test.ply")
+        newply = load_ply("roundtrip_test.ply")
 
         # TODO: Need a better way to access the data arrays than this.
         @test newply["vertex"]["x"].data == x
