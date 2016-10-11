@@ -14,7 +14,8 @@ import PlyIO: add_comment!, load_ply, save_ply, Ply, Element, Comment, ArrayProp
     add_comment!(ply, "Comment about B")
     add_comment!(ply, "Comment about B 2")
     push!(ply, Element("B",
-                       ArrayProperty("y", Int16[-1,1])))
+                       ArrayProperty("r", Int16[-1,1]),
+                       ArrayProperty("g", Int16[1,1])))
     add_comment!(ply, "Final comment")
 
     buf = IOBuffer()
@@ -35,14 +36,15 @@ import PlyIO: add_comment!, load_ply, save_ply, Ply, Element, Comment, ArrayProp
     comment Comment about B
     comment Comment about B 2
     element B 2
-    property short y
+    property short r
+    property short g
     comment Final comment
     end_header
     1	1.1	2 0 1
     2	2.2	3 2 3 4
     3	3.3	1 5
-    -1
-    1
+    -1	1
+    1	1
     """
 end
 

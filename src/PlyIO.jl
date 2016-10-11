@@ -270,6 +270,24 @@ function read_binary_values!(stream::IO, elen, props...)
     end
 end
 
+# Optimization: For properties with homogeneous type, shuffle into a buffer
+# matrix before a batch-wise call to write().  This is a big speed improvement
+# for elements constructed of simple arrays with homogenous type -
+# serialization speed generally seems to be limited by the many individual
+# calls to write() with small buffers.
+function write_binary_values{T}(stream::IO, elen, props::ArrayProperty{T}...)
+    batchsize = 100
+    numprops = length(props)
+    buf = Matrix{T}(numprops, batchsize)
+    for i=1:batchsize:elen
+        thisbatchsize = min(batchsize, elen-i+1)
+        for j=1:numprops
+            buf[j,1:thisbatchsize] = props[j].data[i:i+thisbatchsize-1]
+        end
+        unsafe_write(stream, pointer(buf), sizeof(T)*numprops*thisbatchsize)
+    end
+end
+
 
 
 function read_header(ply_file)
