@@ -1,5 +1,8 @@
 #-------------------------------------------------------------------------------
-# File IO
+# Ply file IO functionality
+
+#--------------------------------------------------
+# Header IO
 
 @enum Format Format_ascii Format_binary_little Format_binary_big
 
@@ -31,16 +34,88 @@ ply_type_name(::Type{Float32})  = "float"
 ply_type_name(::Type{Float64})  = "double"
 
 
+function read_header(ply_file)
+    @assert readline(ply_file) == "ply\n"
+    element_name = ""
+    element_numel = 0
+    element_props = PlyProperty[]
+    elements = Element[]
+    comments = Comment[]
+    format = nothing
+    while true
+        line = strip(readline(ply_file))
+        if line == "end_header"
+            break
+        elseif startswith(line, "comment")
+            push!(comments, Comment(strip(line[8:end]), length(elements)+1))
+        elseif startswith(line, "format")
+            tok, format_type, format_version = split(line)
+            @assert tok == "format"
+            @assert format_version == "1.0"
+            format = format_type == "ascii"                ? Format_ascii :
+                     format_type == "binary_little_endian" ? Format_binary_little :
+                     format_type == "binary_big_endian"    ? Format_binary_big :
+                     error("Unknown ply format $format_type")
+        elseif startswith(line, "element")
+            if !isempty(element_name)
+                push!(elements, Element(element_name, element_numel, element_props))
+                element_props = PlyProperty[]
+            end
+            tok, element_name, element_numel = split(line)
+            @assert tok == "element"
+            element_numel = parse(Int,element_numel)
+        elseif startswith(line, "property")
+            tokens = split(line)
+            @assert tokens[1] == "property"
+            if tokens[2] == "list"
+                count_type_name, type_name, prop_name = tokens[3:end]
+                count_type = ply_type(count_type_name)
+                type_ = ply_type(type_name)
+                push!(element_props, ListProperty(prop_name, ply_type(count_type_name), ply_type(type_name)))
+            else
+                type_name, prop_name = tokens[2:end]
+                push!(element_props, ArrayProperty(prop_name, ply_type(type_name)))
+            end
+        end
+    end
+    push!(elements, Element(element_name, element_numel, element_props))
+    elements, format, comments
+end
 
-function read_binary_value!{T}(stream::IO, prop::ArrayProperty{T}, index)
-    prop.data[index] = read(stream, T)
+
+function write_header(ply, stream::IO, ascii)
+    println(stream, "ply")
+    if ascii
+        println(stream, "format ascii 1.0")
+    else
+        endianness = (ENDIAN_BOM == 0x04030201) ? "little" : "big"
+        println(stream, "format binary_$(endianness)_endian 1.0")
+    end
+    commentidx = 1
+    for (elemidx,element) in enumerate(ply.elements)
+        while commentidx <= length(ply.comments) && ply.comments[commentidx].location == elemidx
+            println(stream, "comment ", ply.comments[commentidx].comment)
+            commentidx += 1
+        end
+        println(stream, "element $(element.name) $(length(element))")
+        for property in element.properties
+            if isa(property, ArrayProperty)
+                println(stream, "property $(ply_type_name(eltype(property.data))) $(property.name)")
+            else
+                println(stream, "property list $(ply_type_name(eltype(property.start_inds))) $(ply_type_name(eltype(property.data))) $(property.name)")
+            end
+        end
+    end
+    while commentidx <= length(ply.comments)
+        println(stream, "comment ", ply.comments[commentidx].comment)
+        commentidx += 1
+    end
+    println(stream, "end_header")
 end
-function read_binary_value!{S,T}(stream::IO, prop::ListProperty{S,T}, index)
-    N = read(stream, S)
-    prop.start_inds[index+1] = prop.start_inds[index] + N
-    inds = read(stream, T, Int(N))
-    append!(prop.data, inds)
-end
+
+
+#-------------------------------------------------------------------------------
+# ASCII IO for properties and elements
 
 function parse_ascii{T}(::Type{T}, io::IO)
     # FIXME: sadly unbuffered, will probably have terrible performance.
@@ -70,6 +145,21 @@ function read_ascii_value!{S,T}(stream::IO, prop::ListProperty{S,T}, index)
 end
 
 
+#-------------------------------------------------------------------------------
+# Binary IO for properties and elements
+
+#--------------------------------------------------
+# property IO
+function read_binary_value!{T}(stream::IO, prop::ArrayProperty{T}, index)
+    prop.data[index] = read(stream, T)
+end
+function read_binary_value!{S,T}(stream::IO, prop::ListProperty{S,T}, index)
+    N = read(stream, S)
+    prop.start_inds[index+1] = prop.start_inds[index] + N
+    inds = read(stream, T, Int(N))
+    append!(prop.data, inds)
+end
+
 function write_binary_value(stream::IO, prop::ArrayProperty, index)
     write(stream, prop.data[index])
 end
@@ -92,6 +182,10 @@ end
 function write_ascii_value(stream::IO, prop::ArrayProperty, index)
     print(stream, prop.data[index])
 end
+
+
+#--------------------------------------------------
+# Batched element IO
 
 # Read/write values for an element as binary.  We codegen a version for each
 # number of properties so we can unroll the inner loop to get type inference
@@ -145,55 +239,8 @@ function write_binary_values{T}(stream::IO, elen, props::ArrayProperty{T}...)
 end
 
 
-
-function read_header(ply_file)
-    @assert readline(ply_file) == "ply\n"
-    element_name = ""
-    element_numel = 0
-    element_props = PlyProperty[]
-    elements = Element[]
-    comments = Comment[]
-    format = nothing
-    while true
-        line = strip(readline(ply_file))
-        if line == "end_header"
-            break
-        elseif startswith(line, "comment")
-            push!(comments, Comment(strip(line[8:end]), length(elements)+1))
-        elseif startswith(line, "format")
-            tok, format_type, format_version = split(line)
-            @assert tok == "format"
-            @assert format_version == "1.0"
-            format = format_type == "ascii"                ? Format_ascii :
-                     format_type == "binary_little_endian" ? Format_binary_little :
-                     format_type == "binary_big_endian"    ? Format_binary_big :
-                     error("Unknown ply format $format_type")
-        elseif startswith(line, "element")
-            if !isempty(element_name)
-                push!(elements, Element(element_name, element_numel, element_props))
-                element_props = PlyProperty[]
-            end
-            tok, element_name, element_numel = split(line)
-            @assert tok == "element"
-            element_numel = parse(Int,element_numel)
-        elseif startswith(line, "property")
-            tokens = split(line)
-            @assert tokens[1] == "property"
-            if tokens[2] == "list"
-                count_type_name, type_name, prop_name = tokens[3:end]
-                count_type = ply_type(count_type_name)
-                type_ = ply_type(type_name)
-                push!(element_props, ListProperty(prop_name, ply_type(count_type_name), ply_type(type_name)))
-            else
-                type_name, prop_name = tokens[2:end]
-                push!(element_props, ArrayProperty(prop_name, ply_type(type_name)))
-            end
-        end
-    end
-    push!(elements, Element(element_name, element_numel, element_props))
-    elements, format, comments
-end
-
+#-------------------------------------------------------------------------------
+# High level IO for complete files
 
 function load_ply(io::IO)
     elements, format, comments = read_header(io)
@@ -221,35 +268,6 @@ function load_ply(file_name::AbstractString)
     end
 end
 
-function write_header(ply, stream::IO, ascii)
-    println(stream, "ply")
-    if ascii
-        println(stream, "format ascii 1.0")
-    else
-        endianness = (ENDIAN_BOM == 0x04030201) ? "little" : "big"
-        println(stream, "format binary_$(endianness)_endian 1.0")
-    end
-    commentidx = 1
-    for (elemidx,element) in enumerate(ply.elements)
-        while commentidx <= length(ply.comments) && ply.comments[commentidx].location == elemidx
-            println(stream, "comment ", ply.comments[commentidx].comment)
-            commentidx += 1
-        end
-        println(stream, "element $(element.name) $(length(element))")
-        for property in element.properties
-            if isa(property, ArrayProperty)
-                println(stream, "property $(ply_type_name(eltype(property.data))) $(property.name)")
-            else
-                println(stream, "property list $(ply_type_name(eltype(property.start_inds))) $(ply_type_name(eltype(property.data))) $(property.name)")
-            end
-        end
-    end
-    while commentidx <= length(ply.comments)
-        println(stream, "comment ", ply.comments[commentidx].comment)
-        commentidx += 1
-    end
-    println(stream, "end_header")
-end
 
 function save_ply(ply, stream::IO; ascii::Bool=false)
     write_header(ply, stream, ascii)
