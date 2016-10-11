@@ -1,8 +1,6 @@
 using PlyIO
 using Base.Test
 
-import PlyIO: add_comment!, load_ply, save_ply, Ply, Element, Comment, ArrayProperty, ListProperty
-
 @testset "simple" begin
     ply = Ply()
     add_comment!(ply, "Comment about A")

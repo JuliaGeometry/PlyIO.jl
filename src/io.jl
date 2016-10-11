@@ -34,6 +34,9 @@ ply_type_name(::Type{Float32})  = "float"
 ply_type_name(::Type{Float64})  = "double"
 
 
+const _host_is_little_endian = (ENDIAN_BOM == 0x04030201)
+
+
 function read_header(ply_file)
     @assert readline(ply_file) == "ply\n"
     element_name = ""
@@ -88,7 +91,7 @@ function write_header(ply, stream::IO, ascii)
     if ascii
         println(stream, "format ascii 1.0")
     else
-        endianness = (ENDIAN_BOM == 0x04030201) ? "little" : "big"
+        endianness = _host_is_little_endian ? "little" : "big"
         println(stream, "format binary_$(endianness)_endian 1.0")
     end
     commentidx = 1
@@ -242,9 +245,21 @@ end
 #-------------------------------------------------------------------------------
 # High level IO for complete files
 
+"""
+    load_ply(file)
+
+Load data from a ply file and return a `Ply` datastructure.  `file` may either
+be a file name or an open stream.
+"""
 function load_ply(io::IO)
     elements, format, comments = read_header(io)
-    @assert format != Format_binary_big
+    if format != Format_ascii
+        if _host_is_little_endian && format != Format_binary_little
+            error("Reading big endian ply on little endian host is not implemented")
+        elseif !_host_is_little_endian && format != Format_binary_big
+            error("Reading little endian ply on big endian host is not implemented")
+        end
+    end
     for element in elements
         for prop in element.properties
             resize!(prop, length(element))
@@ -269,6 +284,13 @@ function load_ply(file_name::AbstractString)
 end
 
 
+"""
+    save_ply(ply::Ply, file; [ascii=false])
+
+Save data from `Ply` data structure into `file` which may be a filename or an
+open stream.  The file will be native endian binary, unless the keyword
+argument `ascii` is set to `true`.
+"""
 function save_ply(ply, stream::IO; ascii::Bool=false)
     write_header(ply, stream, ascii)
     for element in ply
