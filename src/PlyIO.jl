@@ -55,6 +55,7 @@ Base.start(prop::ListProperty) = 1
 Base.next(prop::ListProperty, state) = (prop[state], state+1)
 Base.done(prop::ListProperty, state) = state > length(prop)
 
+
 #--------------------------------------------------
 type Element
     name::String
@@ -104,11 +105,13 @@ end
 #--------------------------------------------------
 type Ply
     elements::Vector{Element}
+    comments::Vector{String}
 end
 
-Ply() = Ply(Vector{Element}())
+Ply() = Ply(Vector{Element}(), Vector{String}())
 
 Base.push!(ply::Ply, el) = push!(ply.elements, el)
+add_comment!(ply::Ply, str) = push!(ply.comments, str)
 
 Base.start(ply::Ply) = start(ply.elements)
 Base.next(ply::Ply, state) = next(ply.elements, state)
@@ -265,13 +268,14 @@ function read_header(ply_file)
     element_numel = 0
     element_props = PlyProperty[]
     element_info = Element[]
+    comments = String[]
     format = nothing
     while true
         line = strip(readline(ply_file))
         if line == "end_header"
             break
         elseif startswith(line, "comment")
-            info("comment: $comment")
+            push!(comments, strip(line[8:end]))
         elseif startswith(line, "format")
             tok, format_type, format_version = split(line)
             @assert tok == "format"
@@ -303,12 +307,12 @@ function read_header(ply_file)
         end
     end
     push!(element_info, Element(element_name, element_numel, element_props))
-    element_info, format
+    element_info, format, comments
 end
 
 
 function load_ply(io::IO)
-    elements, format = read_header(io)
+    elements, format, comments = read_header(io)
     @assert format != Format_binary_big
     for element in elements
         for prop in element.properties
@@ -324,7 +328,7 @@ function load_ply(io::IO)
             read_binary_values!(io, length(element), element.properties...)
         end
     end
-    Ply(elements)
+    Ply(elements, comments)
 end
 
 function load_ply(file_name::AbstractString)
@@ -341,6 +345,9 @@ function write_header(ply, stream::IO, ascii)
         endianness = (ENDIAN_BOM == 0x04030201) ? "little" : "big"
         println(stream, "format binary_$(endianness)_endian 1.0")
     end
+    for comment in ply.comments
+        println(stream, "comment ", comment)
+    end
     for element in ply
         println(stream, "element $(element.name) $(length(element))")
         for property in element.properties
@@ -356,8 +363,8 @@ end
 
 function save_ply(ply, stream::IO; ascii::Bool=false)
     write_header(ply, stream, ascii)
-    if ascii
-        for element in ply
+    for element in ply
+        if ascii
             for i=1:length(element)
                 for (j,property) in enumerate(element.properties)
                     if j != 1
@@ -367,9 +374,7 @@ function save_ply(ply, stream::IO; ascii::Bool=false)
                 end
                 println(stream)
             end
-        end
-    else # binary
-        for element in ply
+        else # binary
             write_binary_values(stream, length(element), element.properties...)
         end
     end

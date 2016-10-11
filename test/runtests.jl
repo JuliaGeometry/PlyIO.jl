@@ -1,10 +1,12 @@
 using PlyIO
 using Base.Test
 
-import PlyIO: load_ply, save_ply, Ply, Element, ArrayProperty, ListProperty
+import PlyIO: add_comment!, load_ply, save_ply, Ply, Element, ArrayProperty, ListProperty
 
 @testset "simple" begin
     ply = Ply()
+    add_comment!(ply, "Comment 1")
+    add_comment!(ply, "Comment 2")
 
     push!(ply, Element("A",
                        ArrayProperty("x", UInt8[1,2,3]),
@@ -14,7 +16,7 @@ import PlyIO: load_ply, save_ply, Ply, Element, ArrayProperty, ListProperty
                        ArrayProperty("y", Int16[-1,1])))
 
     buf = IOBuffer()
-    save_ply(ply, buf, ascii=true)
+    save_ply(ply, buf, ascii=true, )
     str = takebuf_string(buf)
     open("simple_test_tmp.ply", "w") do fid
         write(fid, str)
@@ -23,6 +25,8 @@ import PlyIO: load_ply, save_ply, Ply, Element, ArrayProperty, ListProperty
     """
     ply
     format ascii 1.0
+    comment Comment 1
+    comment Comment 2
     element A 3
     property uchar x
     property float y
@@ -41,6 +45,9 @@ end
 @testset "roundtrip" begin
     @testset "ascii=$test_ascii" for test_ascii in [false, true]
         ply = Ply()
+
+        add_comment!(ply, "A comment")
+        add_comment!(ply, "Blah blah")
 
         nverts = 10
 
@@ -65,5 +72,7 @@ end
         @test newply["vertex"]["y"].data == y
         @test newply["face"]["vertex_index"].start_inds == vertex_index.start_inds
         @test newply["face"]["vertex_index"].data == vertex_index.data
+
+        @test newply.comments == ["A comment", "Blah blah"]
     end
 end
