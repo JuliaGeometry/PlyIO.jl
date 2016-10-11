@@ -86,6 +86,15 @@ function read_header(ply_file)
 end
 
 
+function write_header_field(stream::IO, prop::ArrayProperty)
+    println(stream, "property $(ply_type_name(eltype(prop.data))) $(prop.name)")
+end
+
+function write_header_field(stream::IO, prop::ListProperty)
+    println(stream, "property list $(ply_type_name(eltype(prop.start_inds))) $(ply_type_name(eltype(prop.data))) $(prop.name)")
+end
+
+
 function write_header(ply, stream::IO, ascii)
     println(stream, "ply")
     if ascii
@@ -102,11 +111,7 @@ function write_header(ply, stream::IO, ascii)
         end
         println(stream, "element $(element.name) $(length(element))")
         for property in element.properties
-            if isa(property, ArrayProperty)
-                println(stream, "property $(ply_type_name(eltype(property.data))) $(property.name)")
-            else
-                println(stream, "property list $(ply_type_name(eltype(property.start_inds))) $(ply_type_name(eltype(property.data))) $(property.name)")
-            end
+            write_header_field(stream, property)
         end
     end
     while commentidx <= length(ply.comments)
