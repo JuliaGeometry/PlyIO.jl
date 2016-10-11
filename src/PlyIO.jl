@@ -178,7 +178,7 @@ function parse_ascii{T}(::Type{T}, io::IO)
     buf = UInt8[]
     while !eof(io)
         c = read(io, UInt8)
-        if c == UInt8(' ') || c == UInt8('\n') || c == UInt8('\t')
+        if c == UInt8(' ') || c == UInt8('\t') || c == UInt8('\r') || c == UInt8('\n')
             if !isempty(buf)
                 break
             end
@@ -205,10 +205,10 @@ function write_binary_value(stream::IO, prop::ArrayProperty, index)
     write(stream, prop.data[index])
 end
 function write_binary_value(stream::IO, prop::ListProperty, index)
-    write(stream, prop.start_inds[index+1] - prop.start_inds[index])
-    for i = prop.start_inds[index]:prop.start_inds[index+1]-1
-        write(stream, prop.data[i])
-    end
+    len = prop.start_inds[index+1] - prop.start_inds[index]
+    write(stream, len)
+    esize = sizeof(eltype(prop.data))
+    unsafe_write(stream, pointer(prop.data) + esize*(prop.start_inds[index]-1), esize*len)
 end
 
 function write_ascii_value(stream::IO, prop::ListProperty, index)
@@ -219,6 +219,39 @@ function write_ascii_value(stream::IO, prop::ListProperty, index)
 end
 function write_ascii_value(stream::IO, prop::ArrayProperty, index)
     print(stream, prop.data[index])
+end
+
+# Read/write values for an element as binary.  We codegen a version for each
+# number of properties so we can unroll the inner loop to get type inference
+# for individual properties.  (Could this be done efficiently by mapping over a
+# tuple of properties?  Alternatively a generated function would be ok...)
+for numprop=1:16
+    propnames = [Symbol("p$i") for i=1:numprop]
+    @eval function write_binary_values(stream::IO, elen, $(propnames...))
+        for i=1:elen
+            $([:(write_binary_value(stream, $(propnames[j]), i)) for j=1:numprop]...)
+        end
+    end
+    @eval function read_binary_values!(stream::IO, elen, $(propnames...))
+        for i=1:elen
+            $([:(read_binary_value!(stream, $(propnames[j]), i)) for j=1:numprop]...)
+        end
+    end
+end
+# Fallback for large numbers of properties
+function write_binary_values(stream::IO, elen, props...)
+    for i=1:elen
+        for p in props
+            write_binary_value(stream, property, i)
+        end
+    end
+end
+function read_binary_values!(stream::IO, elen, props...)
+    for i=1:elen
+        for p in props
+            read_binary_value!(stream, p, i)
+        end
+    end
 end
 
 
@@ -285,11 +318,7 @@ function load_ply(io::IO)
                 end
             end
         else # format == Format_binary_little
-            for i = 1:length(element)
-                for prop in element.properties
-                    read_binary_value!(io, prop, i)
-                end
-            end
+            read_binary_values!(io, length(element), element.properties...)
         end
     end
     Ply(elements)
@@ -336,11 +365,7 @@ function save_ply(ply, stream::IO; ascii::Bool=false)
         end
     else # binary
         for element in ply
-            for i=1:length(element)
-                for property in element.properties
-                    write_binary_value(stream, property, i)
-                end
-            end
+            write_binary_values(stream, length(element), element.properties...)
         end
     end
 end
