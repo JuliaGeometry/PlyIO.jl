@@ -8,14 +8,15 @@ import PlyIO: load_ply, save_ply, Ply, Element, ArrayProperty, ListProperty
 
     push!(ply, Element("A",
                        ArrayProperty("x", UInt8[1,2,3]),
-                       ListProperty("y", [[0,1], [2,3,4], [5]])))
+                       ArrayProperty("y", Float32[1.1,2.2,3.3]),
+                       ListProperty("a_list", [[0,1], [2,3,4], [5]])))
     push!(ply, Element("B",
                        ArrayProperty("y", Int16[-1,1])))
 
     buf = IOBuffer()
     save_ply(ply, buf, ascii=true)
     str = takebuf_string(buf)
-    open("foo.ply", "w") do fid
+    open("simple_test_tmp.ply", "w") do fid
         write(fid, str)
     end
     @test str ==
@@ -24,15 +25,16 @@ import PlyIO: load_ply, save_ply, Ply, Element, ArrayProperty, ListProperty
     format ascii 1.0
     element A 3
     property uchar x
-    property list int int64 y
+    property float y
+    property list int int64 a_list
     element B 2
     property short y
     end_header
-    1 2 0 1  
-    2 3 2 3 4  
-    3 1 5  
-    -1 
-    1 
+    1	1.1	2 0 1
+    2	2.2	3 2 3 4
+    3	3.3	1 5
+    -1
+    1
     """
 end
 
@@ -54,9 +56,9 @@ end
         end
         push!(ply, Element("face", vertex_index))
 
-        save_ply(ply, "roundtrip_test.ply", ascii=test_ascii)
+        save_ply(ply, "roundtrip_test_tmp.ply", ascii=test_ascii)
 
-        newply = load_ply("roundtrip_test.ply")
+        newply = load_ply("roundtrip_test_tmp.ply")
 
         # TODO: Need a better way to access the data arrays than this.
         @test newply["vertex"]["x"].data == x

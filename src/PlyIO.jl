@@ -214,7 +214,10 @@ end
 function write_ascii_value(stream::IO, prop::ListProperty, index)
     print(stream, prop.start_inds[index+1] - prop.start_inds[index], ' ')
     for i = prop.start_inds[index]:prop.start_inds[index+1]-1
-        print(stream, prop.data[i], ' ')
+        if i != prop.start_inds[index]
+            write(stream, ' ')
+        end
+        print(stream, prop.data[i])
     end
 end
 function write_ascii_value(stream::IO, prop::ArrayProperty, index)
@@ -356,9 +359,11 @@ function save_ply(ply, stream::IO; ascii::Bool=false)
     if ascii
         for element in ply
             for i=1:length(element)
-                for property in element.properties
+                for (j,property) in enumerate(element.properties)
+                    if j != 1
+                        write(stream, '\t')
+                    end
                     write_ascii_value(stream, property, i)
-                    print(stream, ' ')
                 end
                 println(stream)
             end
