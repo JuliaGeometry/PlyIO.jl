@@ -3,18 +3,18 @@ using Base.Test
 
 @testset "simple" begin
     ply = Ply()
-    add_comment!(ply, "Comment about A")
+    push!(ply, Comment("Comment about A"))
 
     push!(ply, Element("A",
                        ArrayProperty("x", UInt8[1,2,3]),
                        ArrayProperty("y", Float32[1.1,2.2,3.3]),
                        ListProperty("a_list", [[0,1], [2,3,4], [5]])))
-    add_comment!(ply, "Comment about B")
-    add_comment!(ply, "Comment about B 2")
+    push!(ply, Comment("Comment about B"))
+    push!(ply, Comment("Comment about B 2"))
     push!(ply, Element("B",
                        ArrayProperty("r", Int16[-1,1]),
                        ArrayProperty("g", Int16[1,1])))
-    add_comment!(ply, "Final comment")
+    push!(ply, Comment("Final comment"))
 
     buf = IOBuffer()
     save_ply(ply, buf, ascii=true, )
@@ -50,8 +50,8 @@ end
     @testset "ascii=$test_ascii" for test_ascii in [false, true]
         ply = Ply()
 
-        add_comment!(ply, "A comment")
-        add_comment!(ply, "Blah blah")
+        push!(ply, Comment("A comment"))
+        push!(ply, Comment("Blah blah"))
 
         nverts = 10
 

@@ -107,6 +107,8 @@ immutable Comment
     location::Int # index of previous element
 end
 
+Comment(comment::AbstractString) = Comment(comment, -1)
+
 Base.:(==)(a::Comment, b::Comment) = a.comment == b.comment && a.location == b.location
 
 
@@ -118,10 +120,8 @@ end
 
 Ply() = Ply(Vector{Element}(), Vector{String}())
 
-Base.push!(ply::Ply, el) = push!(ply.elements, el)
-function add_comment!(ply::Ply, str)
-    push!(ply.comments, Comment(str, length(ply.elements)+1))
-end
+Base.push!(ply::Ply, el::Element) = push!(ply.elements, el)
+Base.push!(ply::Ply, c::Comment) = push!(ply.comments, Comment(c.comment, length(ply.elements)+1))
 
 Base.start(ply::Ply) = start(ply.elements)
 Base.next(ply::Ply, state) = next(ply.elements, state)
