@@ -103,15 +103,25 @@ end
 
 
 #--------------------------------------------------
+immutable Comment
+    comment::String
+    location::Int # index of previous element
+end
+
+Base.:(==)(a::Comment, b::Comment) = a.comment == b.comment && a.location == b.location
+
+#--------------------------------------------------
 type Ply
     elements::Vector{Element}
-    comments::Vector{String}
+    comments::Vector{Comment}
 end
 
 Ply() = Ply(Vector{Element}(), Vector{String}())
 
 Base.push!(ply::Ply, el) = push!(ply.elements, el)
-add_comment!(ply::Ply, str) = push!(ply.comments, str)
+function add_comment!(ply::Ply, str)
+    push!(ply.comments, Comment(str, length(ply.elements)+1))
+end
 
 Base.start(ply::Ply) = start(ply.elements)
 Base.next(ply::Ply, state) = next(ply.elements, state)
@@ -267,15 +277,15 @@ function read_header(ply_file)
     element_name = ""
     element_numel = 0
     element_props = PlyProperty[]
-    element_info = Element[]
-    comments = String[]
+    elements = Element[]
+    comments = Comment[]
     format = nothing
     while true
         line = strip(readline(ply_file))
         if line == "end_header"
             break
         elseif startswith(line, "comment")
-            push!(comments, strip(line[8:end]))
+            push!(comments, Comment(strip(line[8:end]), length(elements)+1))
         elseif startswith(line, "format")
             tok, format_type, format_version = split(line)
             @assert tok == "format"
@@ -286,7 +296,7 @@ function read_header(ply_file)
                      error("Unknown ply format $format_type")
         elseif startswith(line, "element")
             if !isempty(element_name)
-                push!(element_info, Element(element_name, element_numel, element_props))
+                push!(elements, Element(element_name, element_numel, element_props))
                 element_props = PlyProperty[]
             end
             tok, element_name, element_numel = split(line)
@@ -306,8 +316,8 @@ function read_header(ply_file)
             end
         end
     end
-    push!(element_info, Element(element_name, element_numel, element_props))
-    element_info, format, comments
+    push!(elements, Element(element_name, element_numel, element_props))
+    elements, format, comments
 end
 
 
@@ -345,10 +355,12 @@ function write_header(ply, stream::IO, ascii)
         endianness = (ENDIAN_BOM == 0x04030201) ? "little" : "big"
         println(stream, "format binary_$(endianness)_endian 1.0")
     end
-    for comment in ply.comments
-        println(stream, "comment ", comment)
-    end
-    for element in ply
+    commentidx = 1
+    for (elemidx,element) in enumerate(ply.elements)
+        while commentidx <= length(ply.comments) && ply.comments[commentidx].location == elemidx
+            println(stream, "comment ", ply.comments[commentidx].comment)
+            commentidx += 1
+        end
         println(stream, "element $(element.name) $(length(element))")
         for property in element.properties
             if isa(property, ArrayProperty)
@@ -357,6 +369,10 @@ function write_header(ply, stream::IO, ascii)
                 println(stream, "property list $(ply_type_name(eltype(property.start_inds))) $(ply_type_name(eltype(property.data))) $(property.name)")
             end
         end
+    end
+    while commentidx <= length(ply.comments)
+        println(stream, "comment ", ply.comments[commentidx].comment)
+        commentidx += 1
     end
     println(stream, "end_header")
 end

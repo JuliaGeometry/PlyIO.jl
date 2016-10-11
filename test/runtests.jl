@@ -1,19 +1,21 @@
 using PlyIO
 using Base.Test
 
-import PlyIO: add_comment!, load_ply, save_ply, Ply, Element, ArrayProperty, ListProperty
+import PlyIO: add_comment!, load_ply, save_ply, Ply, Element, Comment, ArrayProperty, ListProperty
 
 @testset "simple" begin
     ply = Ply()
-    add_comment!(ply, "Comment 1")
-    add_comment!(ply, "Comment 2")
+    add_comment!(ply, "Comment about A")
 
     push!(ply, Element("A",
                        ArrayProperty("x", UInt8[1,2,3]),
                        ArrayProperty("y", Float32[1.1,2.2,3.3]),
                        ListProperty("a_list", [[0,1], [2,3,4], [5]])))
+    add_comment!(ply, "Comment about B")
+    add_comment!(ply, "Comment about B 2")
     push!(ply, Element("B",
                        ArrayProperty("y", Int16[-1,1])))
+    add_comment!(ply, "Final comment")
 
     buf = IOBuffer()
     save_ply(ply, buf, ascii=true, )
@@ -25,14 +27,16 @@ import PlyIO: add_comment!, load_ply, save_ply, Ply, Element, ArrayProperty, Lis
     """
     ply
     format ascii 1.0
-    comment Comment 1
-    comment Comment 2
+    comment Comment about A
     element A 3
     property uchar x
     property float y
     property list int int64 a_list
+    comment Comment about B
+    comment Comment about B 2
     element B 2
     property short y
+    comment Final comment
     end_header
     1	1.1	2 0 1
     2	2.2	3 2 3 4
@@ -73,6 +77,6 @@ end
         @test newply["face"]["vertex_index"].start_inds == vertex_index.start_inds
         @test newply["face"]["vertex_index"].data == vertex_index.data
 
-        @test newply.comments == ["A comment", "Blah blah"]
+        @test newply.comments == [Comment("A comment",1), Comment("Blah blah",1)]
     end
 end
