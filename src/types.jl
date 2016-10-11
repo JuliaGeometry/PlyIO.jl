@@ -3,13 +3,25 @@
 
 abstract PlyProperty
 
+typealias PropNameList Union{AbstractVector,Tuple}
 
 #--------------------------------------------------
-type ArrayProperty{T} <: PlyProperty
-    name::String
+type ArrayProperty{T,Name} <: PlyProperty
+    name::Name
     data::Vector{T}
 end
-ArrayProperty{T}(name, ::Type{T}) = ArrayProperty(String(name), Vector{T}())
+
+#=
+# FIXME: Ambiguous constructor
+function ArrayProperty{T}(names::PropNameList, data::AbstractVector{T})
+    if length(names) != length(T)
+        error("Number of property names in $names does not match length($T)")
+    end
+    ArrayProperty(names, data)
+end
+=#
+
+ArrayProperty{T}(name::AbstractString, ::Type{T}) = ArrayProperty(String(name), Vector{T}())
 
 Base.resize!(prop::ArrayProperty, len) = resize!(prop.data, len)
 Base.push!(prop::ArrayProperty, val) = push!(prop.data, val)

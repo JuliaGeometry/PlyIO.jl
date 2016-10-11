@@ -1,5 +1,7 @@
 using PlyIO
+using StaticArrays
 using Base.Test
+
 
 @testset "simple" begin
     ply = Ply()
@@ -46,6 +48,7 @@ using Base.Test
     """
 end
 
+
 @testset "roundtrip" begin
     @testset "ascii=$test_ascii" for test_ascii in [false, true]
         ply = Ply()
@@ -80,3 +83,37 @@ end
         @test newply.comments == [Comment("A comment",1), Comment("Blah blah",1)]
     end
 end
+
+
+@testset "SVector properties" begin
+    ply = Ply()
+    push!(ply, Element("A",
+                       ArrayProperty(["x","y"], SVector{2,Float64}[SVector(1,2), SVector(3,4)])
+                      ))
+    push!(ply, Element("B",
+                       ArrayProperty(["r","g","b"], SVector{3,UInt8}[SVector(1,2,3)])
+                      ))
+    buf = IOBuffer()
+    save_ply(ply, buf, ascii=true)
+    str = takebuf_string(buf)
+    open("SVector_properties_test_tmp.ply", "w") do fid
+        write(fid, str)
+    end
+    @test str ==
+    """
+    ply
+    format ascii 1.0
+    element A 2
+    property double x
+    property double y
+    element B 1
+    property uchar r
+    property uchar g
+    property uchar b
+    end_header
+    1.0	2.0
+    3.0	4.0
+    1	2	3
+    """
+end
+

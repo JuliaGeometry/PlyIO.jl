@@ -22,16 +22,18 @@ function ply_type(type_name)
     end
 end
 
-ply_type_name(::Type{UInt8})    = "uchar"
-ply_type_name(::Type{UInt16})   = "ushort"
-ply_type_name(::Type{UInt32})   = "uint"
-ply_type_name(::Type{UInt64})   = "uint64"
-ply_type_name(::Type{Int8})     = "char"
-ply_type_name(::Type{Int16})    = "short"
-ply_type_name(::Type{Int32})    = "int"
-ply_type_name(::Type{Int64})    = "int64"
-ply_type_name(::Type{Float32})  = "float"
-ply_type_name(::Type{Float64})  = "double"
+ply_type_name(::UInt8)    = "uchar"
+ply_type_name(::UInt16)   = "ushort"
+ply_type_name(::UInt32)   = "uint"
+ply_type_name(::UInt64)   = "uint64"
+ply_type_name(::Int8)     = "char"
+ply_type_name(::Int16)    = "short"
+ply_type_name(::Int32)    = "int"
+ply_type_name(::Int64)    = "int64"
+ply_type_name(::Float32)  = "float"
+ply_type_name(::Float64)  = "double"
+
+ply_type_name(A::AbstractArray)  = ply_type_name(A[1])
 
 
 const _host_is_little_endian = (ENDIAN_BOM == 0x04030201)
@@ -87,11 +89,17 @@ end
 
 
 function write_header_field(stream::IO, prop::ArrayProperty)
-    println(stream, "property $(ply_type_name(eltype(prop.data))) $(prop.name)")
+    println(stream, "property $(ply_type_name(prop.data)) $(prop.name)")
+end
+
+function write_header_field{T,Names<:PropNameList}(stream::IO, prop::ArrayProperty{T,Names})
+    for n in prop.name
+        println(stream, "property $(ply_type_name(prop.data)) $(n)")
+    end
 end
 
 function write_header_field(stream::IO, prop::ListProperty)
-    println(stream, "property list $(ply_type_name(eltype(prop.start_inds))) $(ply_type_name(eltype(prop.data))) $(prop.name)")
+    println(stream, "property list $(ply_type_name(prop.start_inds)) $(ply_type_name(prop.data)) $(prop.name)")
 end
 
 
@@ -190,6 +198,15 @@ end
 function write_ascii_value(stream::IO, prop::ArrayProperty, index)
     print(stream, prop.data[index])
 end
+function write_ascii_value{T<:AbstractArray}(stream::IO, prop::ArrayProperty{T}, index)
+    p = prop.data[index]
+    for i = 1:length(p)
+        if i != 1
+            write(stream, '\t')
+        end
+        print(stream, p[i])
+    end
+end
 
 
 #--------------------------------------------------
@@ -226,6 +243,14 @@ function read_binary_values!(stream::IO, elen, props...)
             read_binary_value!(stream, p, i)
         end
     end
+end
+
+# Optimization: special cases for a single array property within an element
+function write_binary_values(stream::IO, elen, prop::ArrayProperty)
+    write(stream, prop.data)
+end
+function read_binary_values!(stream::IO, elen, prop::ArrayProperty)
+    read!(stream, prop.data)
 end
 
 # Optimization: For properties with homogeneous type, shuffle into a buffer
