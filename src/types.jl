@@ -68,22 +68,22 @@ Base.done(prop::ListProperty, state) = state > length(prop)
 
 
 #--------------------------------------------------
-type Element
+type PlyElement
     name::String
     len::Int
     properties::Vector{PlyProperty}
 end
 
-Element(name::AbstractString) = Element(name, 0, Vector{PlyProperty}())
-function Element(name::AbstractString, props::PlyProperty...)
-    el = Element(name)
+PlyElement(name::AbstractString) = PlyElement(name, 0, Vector{PlyProperty}())
+function PlyElement(name::AbstractString, props::PlyProperty...)
+    el = PlyElement(name)
     for prop in props
         push!(el, prop)
     end
     el
 end
 
-function Base.push!(elem::Element, prop)
+function Base.push!(elem::PlyElement, prop)
     if isempty(elem.properties)
         elem.len = length(prop)
     elseif elem.len != length(elem.properties[1])
@@ -92,18 +92,18 @@ function Base.push!(elem::Element, prop)
     push!(elem.properties, prop)
 end
 
-Base.start(elem::Element) = start(elem.properties)
-Base.next(elem::Element, state) = next(elem.propertes, state)
-Base.done(elem::Element, state) = done(elem.propertes, state)
+Base.start(elem::PlyElement) = start(elem.properties)
+Base.next(elem::PlyElement, state) = next(elem.propertes, state)
+Base.done(elem::PlyElement, state) = done(elem.propertes, state)
 
-Base.length(elem::Element) = elem.len
+Base.length(elem::PlyElement) = elem.len
 
-function Base.show(io::IO, elem::Element)
+function Base.show(io::IO, elem::PlyElement)
     prop_names = join(["\"$(prop.name)\"" for prop in elem.properties], ", ")
-    print(io, "Element \"$(elem.name)\" of length $(length(elem)) with properties [$prop_names]")
+    print(io, "PlyElement \"$(elem.name)\" of length $(length(elem)) with properties [$prop_names]")
 end
 
-function Base.getindex(element::Element, prop_name)
+function Base.getindex(element::PlyElement, prop_name)
     for prop in element.properties
         if prop.name == prop_name
             return prop
@@ -114,26 +114,26 @@ end
 
 
 #--------------------------------------------------
-immutable Comment
+immutable PlyComment
     comment::String
     location::Int # index of previous element
 end
 
-Comment(comment::AbstractString) = Comment(comment, -1)
+PlyComment(comment::AbstractString) = PlyComment(comment, -1)
 
-Base.:(==)(a::Comment, b::Comment) = a.comment == b.comment && a.location == b.location
+Base.:(==)(a::PlyComment, b::PlyComment) = a.comment == b.comment && a.location == b.location
 
 
 #--------------------------------------------------
 type Ply
-    elements::Vector{Element}
-    comments::Vector{Comment}
+    elements::Vector{PlyElement}
+    comments::Vector{PlyComment}
 end
 
-Ply() = Ply(Vector{Element}(), Vector{String}())
+Ply() = Ply(Vector{PlyElement}(), Vector{String}())
 
-Base.push!(ply::Ply, el::Element) = push!(ply.elements, el)
-Base.push!(ply::Ply, c::Comment) = push!(ply.comments, Comment(c.comment, length(ply.elements)+1))
+Base.push!(ply::Ply, el::PlyElement) = push!(ply.elements, el)
+Base.push!(ply::Ply, c::PlyComment) = push!(ply.comments, PlyComment(c.comment, length(ply.elements)+1))
 
 Base.start(ply::Ply) = start(ply.elements)
 Base.next(ply::Ply, state) = next(ply.elements, state)

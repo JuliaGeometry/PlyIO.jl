@@ -44,15 +44,15 @@ function read_header(ply_file)
     element_name = ""
     element_numel = 0
     element_props = PlyProperty[]
-    elements = Element[]
-    comments = Comment[]
+    elements = PlyElement[]
+    comments = PlyComment[]
     format = nothing
     while true
         line = strip(readline(ply_file))
         if line == "end_header"
             break
         elseif startswith(line, "comment")
-            push!(comments, Comment(strip(line[8:end]), length(elements)+1))
+            push!(comments, PlyComment(strip(line[8:end]), length(elements)+1))
         elseif startswith(line, "format")
             tok, format_type, format_version = split(line)
             @assert tok == "format"
@@ -63,7 +63,7 @@ function read_header(ply_file)
                      error("Unknown ply format $format_type")
         elseif startswith(line, "element")
             if !isempty(element_name)
-                push!(elements, Element(element_name, element_numel, element_props))
+                push!(elements, PlyElement(element_name, element_numel, element_props))
                 element_props = PlyProperty[]
             end
             tok, element_name, element_numel = split(line)
@@ -83,7 +83,7 @@ function read_header(ply_file)
             end
         end
     end
-    push!(elements, Element(element_name, element_numel, element_props))
+    push!(elements, PlyElement(element_name, element_numel, element_props))
     elements, format, comments
 end
 
