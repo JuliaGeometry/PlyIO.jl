@@ -1,89 +1,89 @@
 #-------------------------------------------------------------------------------
 # Types representing the ply data model
 
-abstract PlyProperty
+abstract Property
 
 typealias PropNameList Union{AbstractVector,Tuple}
 
 #--------------------------------------------------
-type ArrayProperty{T,Name} <: PlyProperty
+type ArrayProp{T,Name} <: Property
     name::Name
     data::Vector{T}
 end
 
 #=
 # FIXME: Ambiguous constructor
-function ArrayProperty{T}(names::PropNameList, data::AbstractVector{T})
+function ArrayProp{T}(names::PropNameList, data::AbstractVector{T})
     if length(names) != length(T)
         error("Number of property names in $names does not match length($T)")
     end
-    ArrayProperty(names, data)
+    ArrayProp(names, data)
 end
 =#
 
-ArrayProperty{T}(name::AbstractString, ::Type{T}) = ArrayProperty(String(name), Vector{T}())
+ArrayProp{T}(name::AbstractString, ::Type{T}) = ArrayProp(String(name), Vector{T}())
 
-Base.resize!(prop::ArrayProperty, len) = resize!(prop.data, len)
-Base.push!(prop::ArrayProperty, val) = push!(prop.data, val)
+Base.resize!(prop::ArrayProp, len) = resize!(prop.data, len)
+Base.push!(prop::ArrayProp, val) = push!(prop.data, val)
 
-Base.length(prop::ArrayProperty) = length(prop.data)
-Base.getindex(prop::ArrayProperty, i) = prop.data[i]
+Base.length(prop::ArrayProp) = length(prop.data)
+Base.getindex(prop::ArrayProp, i) = prop.data[i]
 
-Base.start(prop::ArrayProperty) = start(prop.data)
-Base.next(prop::ArrayProperty, state) = next(prop.data, state)
-Base.done(prop::ArrayProperty, state) = done(prop.data, state)
+Base.start(prop::ArrayProp) = start(prop.data)
+Base.next(prop::ArrayProp, state) = next(prop.data, state)
+Base.done(prop::ArrayProp, state) = done(prop.data, state)
 
 
 #--------------------------------------------------
-type ListProperty{S,T} <: PlyProperty
+type ListProp{S,T} <: Property
     name::String
     start_inds::Vector{S}
     data::Vector{T}
 end
-ListProperty{S,T}(name, ::Type{S}, ::Type{T}) = ListProperty(String(name), ones(S,1), Vector{T}())
-function ListProperty(name, a::Array)
-    prop = ListProperty(String(name), ones(Int32,1), Vector{eltype(a[1])}())
+ListProp{S,T}(name, ::Type{S}, ::Type{T}) = ListProp(String(name), ones(S,1), Vector{T}())
+function ListProp(name, a::Array)
+    prop = ListProp(String(name), ones(Int32,1), Vector{eltype(a[1])}())
     for ai in a
         push!(prop, ai)
     end
     prop
 end
 
-function Base.resize!(prop::ListProperty, len)
+function Base.resize!(prop::ListProp, len)
     resize!(prop.start_inds, len+1)
     prop.start_inds[1] = 1
 end
 
-function Base.push!(prop::ListProperty, list)
+function Base.push!(prop::ListProp, list)
     push!(prop.start_inds, prop.start_inds[end]+length(list))
     append!(prop.data, list)
 end
 
-Base.length(prop::ListProperty) = length(prop.start_inds)-1
-Base.getindex(prop::ListProperty, i) = prop.data[prop.start_inds[i]:prop.start_inds[i+1]-1]
+Base.length(prop::ListProp) = length(prop.start_inds)-1
+Base.getindex(prop::ListProp, i) = prop.data[prop.start_inds[i]:prop.start_inds[i+1]-1]
 
-Base.start(prop::ListProperty) = 1
-Base.next(prop::ListProperty, state) = (prop[state], state+1)
-Base.done(prop::ListProperty, state) = state > length(prop)
+Base.start(prop::ListProp) = 1
+Base.next(prop::ListProp, state) = (prop[state], state+1)
+Base.done(prop::ListProp, state) = state > length(prop)
 
 
 #--------------------------------------------------
-type PlyElement
+type Element
     name::String
     len::Int
-    properties::Vector{PlyProperty}
+    properties::Vector{Property}
 end
 
-PlyElement(name::AbstractString) = PlyElement(name, 0, Vector{PlyProperty}())
-function PlyElement(name::AbstractString, props::PlyProperty...)
-    el = PlyElement(name)
+Element(name::AbstractString) = Element(name, 0, Vector{Property}())
+function Element(name::AbstractString, props::Property...)
+    el = Element(name)
     for prop in props
         push!(el, prop)
     end
     el
 end
 
-function Base.push!(elem::PlyElement, prop)
+function Base.push!(elem::Element, prop)
     if isempty(elem.properties)
         elem.len = length(prop)
     elseif elem.len != length(elem.properties[1])
@@ -92,62 +92,62 @@ function Base.push!(elem::PlyElement, prop)
     push!(elem.properties, prop)
 end
 
-Base.start(elem::PlyElement) = start(elem.properties)
-Base.next(elem::PlyElement, state) = next(elem.propertes, state)
-Base.done(elem::PlyElement, state) = done(elem.propertes, state)
+Base.start(elem::Element) = start(elem.properties)
+Base.next(elem::Element, state) = next(elem.propertes, state)
+Base.done(elem::Element, state) = done(elem.propertes, state)
 
-Base.length(elem::PlyElement) = elem.len
+Base.length(elem::Element) = elem.len
 
-function Base.show(io::IO, elem::PlyElement)
+function Base.show(io::IO, elem::Element)
     prop_names = join(["\"$(prop.name)\"" for prop in elem.properties], ", ")
-    print(io, "PlyElement \"$(elem.name)\" of length $(length(elem)) with properties [$prop_names]")
+    print(io, "Element \"$(elem.name)\" of length $(length(elem)) with properties [$prop_names]")
 end
 
-function Base.getindex(element::PlyElement, prop_name)
+function Base.getindex(element::Element, prop_name)
     for prop in element.properties
         if prop.name == prop_name
             return prop
         end
     end
-    error("property $prop_name not found in Ply element $(element.name)")
+    error("property $prop_name not found in PlyData element $(element.name)")
 end
 
 
 #--------------------------------------------------
-immutable PlyComment
+immutable Comment
     comment::String
     location::Int # index of previous element
 end
 
-PlyComment(comment::AbstractString) = PlyComment(comment, -1)
+Comment(comment::AbstractString) = Comment(comment, -1)
 
-Base.:(==)(a::PlyComment, b::PlyComment) = a.comment == b.comment && a.location == b.location
+Base.:(==)(a::Comment, b::Comment) = a.comment == b.comment && a.location == b.location
 
 
 #--------------------------------------------------
-type Ply
-    elements::Vector{PlyElement}
-    comments::Vector{PlyComment}
+type PlyData
+    elements::Vector{Element}
+    comments::Vector{Comment}
 end
 
-Ply() = Ply(Vector{PlyElement}(), Vector{String}())
+PlyData() = PlyData(Vector{Element}(), Vector{String}())
 
-Base.push!(ply::Ply, el::PlyElement) = push!(ply.elements, el)
-Base.push!(ply::Ply, c::PlyComment) = push!(ply.comments, PlyComment(c.comment, length(ply.elements)+1))
+Base.push!(ply::PlyData, el::Element) = push!(ply.elements, el)
+Base.push!(ply::PlyData, c::Comment) = push!(ply.comments, Comment(c.comment, length(ply.elements)+1))
 
-Base.start(ply::Ply) = start(ply.elements)
-Base.next(ply::Ply, state) = next(ply.elements, state)
-Base.done(ply::Ply, state) = done(ply.elements, state)
+Base.start(ply::PlyData) = start(ply.elements)
+Base.next(ply::PlyData, state) = next(ply.elements, state)
+Base.done(ply::PlyData, state) = done(ply.elements, state)
 
-function Base.show(io::IO, ply::Ply)
-    print(io, "Ply with elements [$(join(["\"$(elem.name)\"" for elem in ply.elements], ", "))]")
+function Base.show(io::IO, ply::PlyData)
+    print(io, "PlyData with elements [$(join(["\"$(elem.name)\"" for elem in ply.elements], ", "))]")
 end
 
-function Base.getindex(ply::Ply, elem_name)
+function Base.getindex(ply::PlyData, elem_name)
     for elem in ply.elements
         if elem.name == elem_name
             return elem
         end
     end
-    error("$elem_name not found in Ply element list")
+    error("$elem_name not found in PlyData element list")
 end

@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Ply file IO functionality
+# PlyData file IO functionality
 
 #--------------------------------------------------
 # Header IO
@@ -43,16 +43,16 @@ function read_header(ply_file)
     @assert readline(ply_file) == "ply\n"
     element_name = ""
     element_numel = 0
-    element_props = PlyProperty[]
-    elements = PlyElement[]
-    comments = PlyComment[]
+    element_props = Property[]
+    elements = Element[]
+    comments = Comment[]
     format = nothing
     while true
         line = strip(readline(ply_file))
         if line == "end_header"
             break
         elseif startswith(line, "comment")
-            push!(comments, PlyComment(strip(line[8:end]), length(elements)+1))
+            push!(comments, Comment(strip(line[8:end]), length(elements)+1))
         elseif startswith(line, "format")
             tok, format_type, format_version = split(line)
             @assert tok == "format"
@@ -63,8 +63,8 @@ function read_header(ply_file)
                      error("Unknown ply format $format_type")
         elseif startswith(line, "element")
             if !isempty(element_name)
-                push!(elements, PlyElement(element_name, element_numel, element_props))
-                element_props = PlyProperty[]
+                push!(elements, Element(element_name, element_numel, element_props))
+                element_props = Property[]
             end
             tok, element_name, element_numel = split(line)
             @assert tok == "element"
@@ -76,29 +76,29 @@ function read_header(ply_file)
                 count_type_name, type_name, prop_name = tokens[3:end]
                 count_type = ply_type(count_type_name)
                 type_ = ply_type(type_name)
-                push!(element_props, ListProperty(prop_name, ply_type(count_type_name), ply_type(type_name)))
+                push!(element_props, ListProp(prop_name, ply_type(count_type_name), ply_type(type_name)))
             else
                 type_name, prop_name = tokens[2:end]
-                push!(element_props, ArrayProperty(prop_name, ply_type(type_name)))
+                push!(element_props, ArrayProp(prop_name, ply_type(type_name)))
             end
         end
     end
-    push!(elements, PlyElement(element_name, element_numel, element_props))
+    push!(elements, Element(element_name, element_numel, element_props))
     elements, format, comments
 end
 
 
-function write_header_field(stream::IO, prop::ArrayProperty)
+function write_header_field(stream::IO, prop::ArrayProp)
     println(stream, "property $(ply_type_name(prop.data)) $(prop.name)")
 end
 
-function write_header_field{T,Names<:PropNameList}(stream::IO, prop::ArrayProperty{T,Names})
+function write_header_field{T,Names<:PropNameList}(stream::IO, prop::ArrayProp{T,Names})
     for n in prop.name
         println(stream, "property $(ply_type_name(prop.data)) $(n)")
     end
 end
 
-function write_header_field(stream::IO, prop::ListProperty)
+function write_header_field(stream::IO, prop::ListProp)
     println(stream, "property list $(ply_type_name(prop.start_inds)) $(ply_type_name(prop.data)) $(prop.name)")
 end
 
@@ -149,10 +149,10 @@ function parse_ascii{T}(::Type{T}, io::IO)
     parse(T, String(buf))
 end
 
-function read_ascii_value!{T}(stream::IO, prop::ArrayProperty{T}, index)
+function read_ascii_value!{T}(stream::IO, prop::ArrayProp{T}, index)
     prop.data[index] = parse_ascii(T, stream)
 end
-function read_ascii_value!{S,T}(stream::IO, prop::ListProperty{S,T}, index)
+function read_ascii_value!{S,T}(stream::IO, prop::ListProp{S,T}, index)
     N = parse_ascii(S, stream)
     prop.start_inds[index+1] = prop.start_inds[index] + N
     for i=1:N
@@ -166,27 +166,27 @@ end
 
 #--------------------------------------------------
 # property IO
-function read_binary_value!{T}(stream::IO, prop::ArrayProperty{T}, index)
+function read_binary_value!{T}(stream::IO, prop::ArrayProp{T}, index)
     prop.data[index] = read(stream, T)
 end
-function read_binary_value!{S,T}(stream::IO, prop::ListProperty{S,T}, index)
+function read_binary_value!{S,T}(stream::IO, prop::ListProp{S,T}, index)
     N = read(stream, S)
     prop.start_inds[index+1] = prop.start_inds[index] + N
     inds = read(stream, T, Int(N))
     append!(prop.data, inds)
 end
 
-function write_binary_value(stream::IO, prop::ArrayProperty, index)
+function write_binary_value(stream::IO, prop::ArrayProp, index)
     write(stream, prop.data[index])
 end
-function write_binary_value(stream::IO, prop::ListProperty, index)
+function write_binary_value(stream::IO, prop::ListProp, index)
     len = prop.start_inds[index+1] - prop.start_inds[index]
     write(stream, len)
     esize = sizeof(eltype(prop.data))
     unsafe_write(stream, pointer(prop.data) + esize*(prop.start_inds[index]-1), esize*len)
 end
 
-function write_ascii_value(stream::IO, prop::ListProperty, index)
+function write_ascii_value(stream::IO, prop::ListProp, index)
     print(stream, prop.start_inds[index+1] - prop.start_inds[index], ' ')
     for i = prop.start_inds[index]:prop.start_inds[index+1]-1
         if i != prop.start_inds[index]
@@ -195,10 +195,10 @@ function write_ascii_value(stream::IO, prop::ListProperty, index)
         print(stream, prop.data[i])
     end
 end
-function write_ascii_value(stream::IO, prop::ArrayProperty, index)
+function write_ascii_value(stream::IO, prop::ArrayProp, index)
     print(stream, prop.data[index])
 end
-function write_ascii_value{T<:AbstractArray}(stream::IO, prop::ArrayProperty{T}, index)
+function write_ascii_value{T<:AbstractArray}(stream::IO, prop::ArrayProp{T}, index)
     p = prop.data[index]
     for i = 1:length(p)
         if i != 1
@@ -246,10 +246,10 @@ function read_binary_values!(stream::IO, elen, props...)
 end
 
 # Optimization: special cases for a single array property within an element
-function write_binary_values(stream::IO, elen, prop::ArrayProperty)
+function write_binary_values(stream::IO, elen, prop::ArrayProp)
     write(stream, prop.data)
 end
-function read_binary_values!(stream::IO, elen, prop::ArrayProperty)
+function read_binary_values!(stream::IO, elen, prop::ArrayProp)
     read!(stream, prop.data)
 end
 
@@ -258,7 +258,7 @@ end
 # for elements constructed of simple arrays with homogenous type -
 # serialization speed generally seems to be limited by the many individual
 # calls to write() with small buffers.
-function write_binary_values{T}(stream::IO, elen, props::ArrayProperty{T}...)
+function write_binary_values{T}(stream::IO, elen, props::ArrayProp{T}...)
     batchsize = 100
     numprops = length(props)
     buf = Matrix{T}(numprops, batchsize)
@@ -278,7 +278,7 @@ end
 """
     load_ply(file)
 
-Load data from a ply file and return a `Ply` datastructure.  `file` may either
+Load data from a ply file and return a `PlyData` datastructure.  `file` may either
 be a file name or an open stream.
 """
 function load_ply(io::IO)
@@ -304,7 +304,7 @@ function load_ply(io::IO)
             read_binary_values!(io, length(element), element.properties...)
         end
     end
-    Ply(elements, comments)
+    PlyData(elements, comments)
 end
 
 function load_ply(file_name::AbstractString)
@@ -315,9 +315,9 @@ end
 
 
 """
-    save_ply(ply::Ply, file; [ascii=false])
+    save_ply(ply::PlyData, file; [ascii=false])
 
-Save data from `Ply` data structure into `file` which may be a filename or an
+Save data from `PlyData` data structure into `file` which may be a filename or an
 open stream.  The file will be native endian binary, unless the keyword
 argument `ascii` is set to `true`.
 """

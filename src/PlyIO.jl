@@ -3,7 +3,7 @@ __precompile__()
 module PlyIO
 
 # Types for the ply data model
-export Ply, PlyElement, PlyComment, PlyProperty, ArrayProperty, ListProperty
+export PlyData, Element, Comment, Property, ArrayProp, ListProp
 
 # High level file IO
 # (TODO: FileIO?)
