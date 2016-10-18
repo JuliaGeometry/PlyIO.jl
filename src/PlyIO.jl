@@ -2,14 +2,18 @@ __precompile__()
 
 module PlyIO
 
+include("types.jl")
+
+using .Ply
+import .Ply: PropNameList
+
 # Types for the ply data model
-export PlyData, Element, Comment, Property, ArrayProp, ListProp
+export PlyData, Ply
 
 # High level file IO
 # (TODO: FileIO?)
 export load_ply, save_ply
 
-include("types.jl")
 include("io.jl")
 
 end

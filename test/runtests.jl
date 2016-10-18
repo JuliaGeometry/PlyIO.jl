@@ -2,6 +2,7 @@ using PlyIO
 using StaticArrays
 using Base.Test
 
+using PlyIO.Ply
 
 @testset "simple" begin
     ply = PlyData()

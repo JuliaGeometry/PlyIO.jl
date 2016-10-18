@@ -1,6 +1,10 @@
 #-------------------------------------------------------------------------------
 # Types representing the ply data model
 
+module Ply
+
+export Property, ArrayProp, ListProp, Element, Comment, PlyData
+
 abstract Property
 
 typealias PropNameList Union{AbstractVector,Tuple}
@@ -150,4 +154,6 @@ function Base.getindex(ply::PlyData, elem_name)
         end
     end
     error("$elem_name not found in PlyData element list")
+end
+
 end
