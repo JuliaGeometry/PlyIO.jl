@@ -8,7 +8,7 @@ using .Ply
 import .Ply: PropNameList
 
 # Types for the ply data model
-export PlyData, Ply
+export Ply
 
 # High level file IO
 # (TODO: FileIO?)

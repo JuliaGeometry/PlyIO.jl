@@ -5,7 +5,7 @@ using Base.Test
 using PlyIO.Ply
 
 @testset "simple" begin
-    ply = PlyData()
+    ply = Ply.Data()
     push!(ply, Comment("Comment about A"))
 
     push!(ply, Element("A",
@@ -52,7 +52,7 @@ end
 
 @testset "roundtrip" begin
     @testset "ascii=$test_ascii" for test_ascii in [false, true]
-        ply = PlyData()
+        ply = Ply.Data()
 
         push!(ply, Comment("A comment"))
         push!(ply, Comment("Blah blah"))
@@ -87,7 +87,7 @@ end
 
 
 @testset "SVector properties" begin
-    ply = PlyData()
+    ply = Ply.Data()
     push!(ply, Element("A",
                        ArrayProp(["x","y"], SVector{2,Float64}[SVector(1,2), SVector(3,4)])
                       ))

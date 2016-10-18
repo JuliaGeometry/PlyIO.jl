@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# PlyData file IO functionality
+# ply file IO functionality
 
 #--------------------------------------------------
 # Header IO
@@ -278,7 +278,7 @@ end
 """
     load_ply(file)
 
-Load data from a ply file and return a `PlyData` datastructure.  `file` may either
+Load data from a ply file and return a `Ply.Data` datastructure.  `file` may either
 be a file name or an open stream.
 """
 function load_ply(io::IO)
@@ -304,7 +304,7 @@ function load_ply(io::IO)
             read_binary_values!(io, length(element), element.properties...)
         end
     end
-    PlyData(elements, comments)
+    Ply.Data(elements, comments)
 end
 
 function load_ply(file_name::AbstractString)
@@ -315,9 +315,9 @@ end
 
 
 """
-    save_ply(ply::PlyData, file; [ascii=false])
+    save_ply(ply::Ply.Data, file; [ascii=false])
 
-Save data from `PlyData` data structure into `file` which may be a filename or an
+Save data from `Ply.Data` data structure into `file` which may be a filename or an
 open stream.  The file will be native endian binary, unless the keyword
 argument `ascii` is set to `true`.
 """

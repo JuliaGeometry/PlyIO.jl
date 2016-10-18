@@ -12,7 +12,7 @@ and edges:
 ```julia
 using PlyIO
 
-ply = PlyData()
+ply = Ply.Data()
 push!(ply, Ply.Comment("An example ply file"))
 
 nverts = 1000

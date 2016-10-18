@@ -3,7 +3,7 @@
 
 module Ply
 
-export Property, ArrayProp, ListProp, Element, Comment, PlyData
+export Property, ArrayProp, ListProp, Element, Comment, Data
 
 abstract Property
 
@@ -113,7 +113,7 @@ function Base.getindex(element::Element, prop_name)
             return prop
         end
     end
-    error("property $prop_name not found in PlyData element $(element.name)")
+    error("property $prop_name not found in Data element $(element.name)")
 end
 
 
@@ -129,31 +129,31 @@ Base.:(==)(a::Comment, b::Comment) = a.comment == b.comment && a.location == b.l
 
 
 #--------------------------------------------------
-type PlyData
+type Data
     elements::Vector{Element}
     comments::Vector{Comment}
 end
 
-PlyData() = PlyData(Vector{Element}(), Vector{String}())
+Data() = Data(Vector{Element}(), Vector{String}())
 
-Base.push!(ply::PlyData, el::Element) = push!(ply.elements, el)
-Base.push!(ply::PlyData, c::Comment) = push!(ply.comments, Comment(c.comment, length(ply.elements)+1))
+Base.push!(ply::Data, el::Element) = push!(ply.elements, el)
+Base.push!(ply::Data, c::Comment) = push!(ply.comments, Comment(c.comment, length(ply.elements)+1))
 
-Base.start(ply::PlyData) = start(ply.elements)
-Base.next(ply::PlyData, state) = next(ply.elements, state)
-Base.done(ply::PlyData, state) = done(ply.elements, state)
+Base.start(ply::Data) = start(ply.elements)
+Base.next(ply::Data, state) = next(ply.elements, state)
+Base.done(ply::Data, state) = done(ply.elements, state)
 
-function Base.show(io::IO, ply::PlyData)
-    print(io, "PlyData with elements [$(join(["\"$(elem.name)\"" for elem in ply.elements], ", "))]")
+function Base.show(io::IO, ply::Data)
+    print(io, "Data with elements [$(join(["\"$(elem.name)\"" for elem in ply.elements], ", "))]")
 end
 
-function Base.getindex(ply::PlyData, elem_name)
+function Base.getindex(ply::Data, elem_name)
     for elem in ply.elements
         if elem.name == elem_name
             return elem
         end
     end
-    error("$elem_name not found in PlyData element list")
+    error("$elem_name not found in Data element list")
 end
 
 end
