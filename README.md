@@ -19,12 +19,12 @@ nverts = 1000
 
 # Random vertices with position and color
 vertex = Ply.Element("vertex",
-                     ArrayProp("x", randn(nverts)),
-                     ArrayProp("y", randn(nverts)),
-                     ArrayProp("z", randn(nverts)),
-                     ArrayProp("r", rand(nverts)),
-                     ArrayProp("g", rand(nverts)),
-                     ArrayProp("b", rand(nverts)))
+                     Ply.ArrayProp("x", randn(nverts)),
+                     Ply.ArrayProp("y", randn(nverts)),
+                     Ply.ArrayProp("z", randn(nverts)),
+                     Ply.ArrayProp("r", rand(nverts)),
+                     Ply.ArrayProp("g", rand(nverts)),
+                     Ply.ArrayProp("b", rand(nverts)))
 push!(ply, vertex)
 
 # Some triangular faces
