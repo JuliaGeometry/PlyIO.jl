@@ -1,5 +1,15 @@
+__precompile__()
+
 module PlyIO
 
-# package code goes here
+# Types for the ply data model
+export Ply, PlyElement, PlyComment, PlyProperty, ArrayProperty, ListProperty
 
-end # module
+# High level file IO
+# (TODO: FileIO?)
+export load_ply, save_ply
+
+include("types.jl")
+include("io.jl")
+
+end
