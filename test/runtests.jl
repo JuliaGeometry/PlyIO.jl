@@ -30,14 +30,14 @@ using Base.Test
     format ascii 1.0
     comment PlyComment about A
     element A 3
-    property uchar x
-    property float y
-    property list int int64 a_list
+    property uint8 x
+    property float32 y
+    property list int32 int64 a_list
     comment PlyComment about B
     comment PlyComment about B 2
     element B 2
-    property short r
-    property short g
+    property int16 r
+    property int16 g
     comment Final comment
     end_header
     1	1.1	2 0 1
@@ -104,12 +104,12 @@ end
     ply
     format ascii 1.0
     element A 2
-    property double x
-    property double y
+    property float64 x
+    property float64 y
     element B 1
-    property uchar r
-    property uchar g
-    property uchar b
+    property uint8 r
+    property uint8 g
+    property uint8 b
     end_header
     1.0	2.0
     3.0	4.0

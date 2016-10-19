@@ -22,16 +22,16 @@ function ply_type(type_name)
     end
 end
 
-ply_type_name(::UInt8)    = "uchar"
-ply_type_name(::UInt16)   = "ushort"
-ply_type_name(::UInt32)   = "uint"
+ply_type_name(::UInt8)    = "uint8"
+ply_type_name(::UInt16)   = "uint16"
+ply_type_name(::UInt32)   = "uint32"
 ply_type_name(::UInt64)   = "uint64"
-ply_type_name(::Int8)     = "char"
-ply_type_name(::Int16)    = "short"
-ply_type_name(::Int32)    = "int"
+ply_type_name(::Int8)     = "int8"
+ply_type_name(::Int16)    = "int16"
+ply_type_name(::Int32)    = "int32"
 ply_type_name(::Int64)    = "int64"
-ply_type_name(::Float32)  = "float"
-ply_type_name(::Float64)  = "double"
+ply_type_name(::Float32)  = "float32"
+ply_type_name(::Float64)  = "float64"
 
 ply_type_name(A::AbstractArray)  = ply_type_name(A[1])
 
