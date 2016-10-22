@@ -12,7 +12,7 @@ using Base.Test
     push!(ply, PlyElement("A",
                           ArrayProperty("x", UInt8[1,2,3]),
                           ArrayProperty("y", Float32[1.1,2.2,3.3]),
-                          ListProperty("a_list", [[0,1], [2,3,4], [5]])))
+                          ListProperty("a_list", Vector{Int64}[[0,1], [2,3,4], [5]])))
     push!(ply, PlyComment("PlyComment about B"))
     push!(ply, PlyComment("PlyComment about B 2"))
     push!(ply, PlyElement("B",
