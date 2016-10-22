@@ -2,6 +2,8 @@ using PlyIO
 using StaticArrays
 using Base.Test
 
+@testset "PlyIO" begin
+
 
 @testset "simple" begin
     ply = Ply()
@@ -75,10 +77,9 @@ end
         newply = load_ply("roundtrip_test_tmp.ply")
 
         # TODO: Need a better way to access the data arrays than this.
-        @test newply["vertex"]["x"].data == x
-        @test newply["vertex"]["y"].data == y
-        @test newply["face"]["vertex_index"].start_inds == vertex_index.start_inds
-        @test newply["face"]["vertex_index"].data == vertex_index.data
+        @test newply["vertex"]["x"] == x
+        @test newply["vertex"]["y"] == y
+        @test newply["face"]["vertex_index"] == vertex_index
 
         @test newply.comments == [PlyComment("A comment",1), PlyComment("Blah blah",1)]
     end
@@ -117,3 +118,5 @@ end
     """
 end
 
+
+end # @testset PlyIO

@@ -43,7 +43,7 @@ function read_header(ply_file)
     @assert readline(ply_file) == "ply\n"
     element_name = ""
     element_numel = 0
-    element_props = PlyProperty[]
+    element_props = Vector{AbstractVector}()
     elements = PlyElement[]
     comments = PlyComment[]
     format = nothing
@@ -64,7 +64,7 @@ function read_header(ply_file)
         elseif startswith(line, "element")
             if !isempty(element_name)
                 push!(elements, PlyElement(element_name, element_numel, element_props))
-                element_props = PlyProperty[]
+                element_props = Vector{AbstractVector}()
             end
             tok, element_name, element_numel = split(line)
             @assert tok == "element"
