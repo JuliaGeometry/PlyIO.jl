@@ -22,6 +22,17 @@ function ply_type(type_name)
     end
 end
 
+ply_type_name(::Type{UInt8})    = "uint8"
+ply_type_name(::Type{UInt16})   = "uint16"
+ply_type_name(::Type{UInt32})   = "uint32"
+ply_type_name(::Type{UInt64})   = "uint64"
+ply_type_name(::Type{Int8})     = "int8"
+ply_type_name(::Type{Int16})    = "int16"
+ply_type_name(::Type{Int32})    = "int32"
+ply_type_name(::Type{Int64})    = "int64"
+ply_type_name(::Type{Float32})  = "float32"
+ply_type_name(::Type{Float64})  = "float64"
+
 ply_type_name(::UInt8)    = "uint8"
 ply_type_name(::UInt16)   = "uint16"
 ply_type_name(::UInt32)   = "uint32"
@@ -98,8 +109,8 @@ function write_header_field{T,Names<:PropNameList}(stream::IO, prop::ArrayProper
     end
 end
 
-function write_header_field(stream::IO, prop::ListProperty)
-    println(stream, "property list $(ply_type_name(prop.start_inds)) $(ply_type_name(prop.data)) $(prop.name)")
+function write_header_field{S}(stream::IO, prop::ListProperty{S})
+    println(stream, "property list $(ply_type_name(S)) $(ply_type_name(prop.data)) $(prop.name)")
 end
 
 
@@ -179,9 +190,9 @@ end
 function write_binary_value(stream::IO, prop::ArrayProperty, index)
     write(stream, prop.data[index])
 end
-function write_binary_value(stream::IO, prop::ListProperty, index)
+function write_binary_value{S}(stream::IO, prop::ListProperty{S}, index)
     len = prop.start_inds[index+1] - prop.start_inds[index]
-    write(stream, len)
+    write(stream, convert(S, len))
     esize = sizeof(eltype(prop.data))
     unsafe_write(stream, pointer(prop.data) + esize*(prop.start_inds[index]-1), esize*len)
 end

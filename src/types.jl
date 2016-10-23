@@ -61,11 +61,11 @@ with a name which can be retrieved using `plyname()`.
 """
 type ListProperty{S,T} <: AbstractVector{Vector{T}}
     name::String
-    start_inds::Vector{S}
+    start_inds::Vector{Int}
     data::Vector{T}
 end
 
-ListProperty{S,T}(name, ::Type{S}, ::Type{T}) = ListProperty(String(name), ones(S,1), Vector{T}())
+ListProperty{S,T}(name, ::Type{S}, ::Type{T}) = ListProperty{S,T}(String(name), ones(Int,1), Vector{T}())
 
 function ListProperty(name::AbstractString, a::AbstractVector)
     # Construct list from an array of arrays
@@ -137,7 +137,7 @@ function Base.length(elem::PlyElement)
     len = length(elem.properties[1])
     if any(prop->len != length(prop), elem.properties)
         proplens = [length(p) for p in elem.properties]
-        throw(ErrorException("Element $(elname(elme)) has inconsistent property lengths: $proplens"))
+        throw(ErrorException("Element $(plyname(elem)) has inconsistent property lengths: $proplens"))
     end
     return len
 end
