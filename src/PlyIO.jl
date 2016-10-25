@@ -3,7 +3,8 @@ __precompile__()
 module PlyIO
 
 # Types for the ply data model
-export Ply, PlyElement, PlyComment, PlyProperty, ArrayProperty, ListProperty
+export Ply, PlyElement, PlyComment, ArrayProperty, ListProperty
+export plyname  # Is there something in base we could overload for this?
 
 # High level file IO
 # (TODO: FileIO?)
