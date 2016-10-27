@@ -83,6 +83,25 @@ end
 
         @test newply.comments == [PlyComment("A comment",1), PlyComment("Blah blah",1)]
     end
+
+    @testset "proptype=$proptype" for proptype in [Int8, Int16, Int32, Int64,
+                                                   UInt8, UInt16, UInt32, UInt64,
+                                                   Float32, Float64]
+        ply = Ply()
+        arrayprop = zeros(proptype, 1) + 42
+        listprop = ListProperty("listprop", proptype<:Integer ? proptype : Int32, proptype)
+        push!(listprop, collect(proptype, 1:10))
+        push!(ply, PlyElement("test", ArrayProperty("arrayprop", arrayprop), listprop))
+        io = IOBuffer()
+        save_ply(ply, io)
+        seek(io, 0)
+        newply = load_ply(io)
+        @test length(newply) == 1
+        @test typeof(newply["test"]["arrayprop"][1]) == proptype
+        @test newply["test"]["arrayprop"] == arrayprop
+        @test typeof(newply["test"]["listprop"][1]) == Vector{proptype}
+        @test newply["test"]["listprop"] == listprop
+    end
 end
 
 

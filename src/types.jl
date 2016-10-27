@@ -216,6 +216,7 @@ function Base.getindex(ply::Ply, elem_name::AbstractString)
     error("$elem_name not found in Ply element list")
 end
 
+Base.length(ply::Ply) = length(ply.elements)
 Base.start(ply::Ply) = start(ply.elements)
 Base.next(ply::Ply, state) = next(ply.elements, state)
 Base.done(ply::Ply, state) = done(ply.elements, state)
