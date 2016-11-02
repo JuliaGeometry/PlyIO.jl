@@ -32,8 +32,11 @@ vertex = PlyElement("vertex",
                     ArrayProperty("b", rand(nverts)))
 push!(ply, vertex)
 
-# Some triangular faces
-vertex_index = ListProperty("vertex_index", Int32, Int32)
+# Some triangular faces.
+# The UInt8 is the type used for serializing the number of list elements (equal
+# to 3 for a triangular mesh); the Int32 is the type used to serialize indices
+# into the vertex array.
+vertex_index = ListProperty("vertex_index", UInt8, Int32)
 for i=1:nverts
    push!(vertex_index, rand(0:nverts-1,3))
 end
