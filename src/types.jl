@@ -45,7 +45,7 @@ Base.linearindexing(prop::ArrayProperty) = Base.LinearFast()
 
 # List methods
 Base.resize!(prop::ArrayProperty, len) = resize!(prop.data, len)
-Base.push!(prop::ArrayProperty, val) = push!(prop.data, val)
+Base.push!(prop::ArrayProperty, val) = (push!(prop.data, val); prop)
 
 # Ply methods
 plyname(prop::ArrayProperty) = prop.name
@@ -91,6 +91,7 @@ end
 function Base.push!(prop::ListProperty, list)
     push!(prop.start_inds, prop.start_inds[end]+length(list))
     append!(prop.data, list)
+    prop
 end
 
 # Ply methods
@@ -156,7 +157,7 @@ end
 Base.start(elem::PlyElement) = start(elem.properties)
 Base.next(elem::PlyElement, state) = next(elem.propertes, state)
 Base.done(elem::PlyElement, state) = done(elem.propertes, state)
-Base.push!(elem::PlyElement, prop) = push!(elem.properties, prop)
+Base.push!(elem::PlyElement, prop) = (push!(elem.properties, prop); elem)
 
 # Ply methods
 plyname(elem::PlyElement) = elem.name
@@ -203,8 +204,8 @@ function Base.show(io::IO, ply::Ply)
 end
 
 # List methods
-Base.push!(ply::Ply, el::PlyElement) = push!(ply.elements, el)
-Base.push!(ply::Ply, c::PlyComment) = push!(ply.comments, PlyComment(c.comment, length(ply.elements)+1))
+Base.push!(ply::Ply, el::PlyElement) = (push!(ply.elements, el); ply)
+Base.push!(ply::Ply, c::PlyComment) = (push!(ply.comments, PlyComment(c.comment, length(ply.elements)+1)); ply)
 
 # Element search and iteration
 function Base.getindex(ply::Ply, elem_name::AbstractString)
