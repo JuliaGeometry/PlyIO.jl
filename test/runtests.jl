@@ -21,7 +21,7 @@ using Base.Test
     push!(ply, PlyComment("Final comment"))
 
     buf = IOBuffer()
-    save_ply(ply, buf, ascii=true, )
+    save_ply(ply, buf, ascii=true)
     str = takebuf_string(buf)
     open("simple_test_tmp.ply", "w") do fid
         write(fid, str)
@@ -50,6 +50,32 @@ using Base.Test
     """
 end
 
+@testset "empty elements" begin
+    ply = Ply()
+
+    push!(ply, PlyElement("A", ArrayProperty("x", UInt8[])))
+    push!(ply, PlyElement("B", ListProperty("a_list", Vector{Int64}[[], [], []])))
+
+    buf = IOBuffer()
+    save_ply(ply, buf, ascii=true)
+    str = takebuf_string(buf)
+    open("empty_test_tmp.ply", "w") do fid
+        write(fid, str)
+    end
+    @test str ==
+    """
+    ply
+    format ascii 1.0
+    element A 0
+    property uint8 x
+    element B 3
+    property list int32 int64 a_list
+    end_header
+    0 
+    0 
+    0 
+    """
+end
 
 @testset "roundtrip" begin
     @testset "ascii=$test_ascii" for test_ascii in [false, true]

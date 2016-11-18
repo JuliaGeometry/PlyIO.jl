@@ -44,7 +44,12 @@ ply_type_name(::Int64)    = "int64"
 ply_type_name(::Float32)  = "float32"
 ply_type_name(::Float64)  = "float64"
 
-ply_type_name(A::AbstractArray)  = ply_type_name(A[1])
+typealias PlyNativeType Union{UInt8,UInt16,UInt32,UInt64,Int8,Int16,Int32,Int64,Float32,Float64}
+
+ply_type_name{T<:PlyNativeType}(A::AbstractArray{T}) = ply_type_name(T)
+
+ply_type_name(A::AbstractArray) = !isempty(A) ? ply_type_name(A[1]) :
+                                  error("Unknown ply element type name for empty array of type $(typeof(A))")
 
 
 const _host_is_little_endian = (ENDIAN_BOM == 0x04030201)
