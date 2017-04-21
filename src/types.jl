@@ -9,7 +9,7 @@ Return the name that `data` is associated with when serialized in a ply file
 function plyname
 end
 
-typealias PropNameList Union{AbstractVector,Tuple}
+@compat const PropNameList = Union{AbstractVector,Tuple}
 
 #--------------------------------------------------
 """
@@ -41,7 +41,7 @@ Base.summary(prop::ArrayProperty) = "$(length(prop))-element $(typeof(prop)) \"$
 Base.size(prop::ArrayProperty) = size(prop.data)
 Base.getindex(prop::ArrayProperty, i::Int) = prop.data[i]
 Base.setindex!(prop::ArrayProperty, v, i::Int) = prop.data[i] = v
-Base.linearindexing(prop::ArrayProperty) = Base.LinearFast()
+@compat Base.IndexStyle(::Type{<:ArrayProperty}) = IndexLinear()
 
 # List methods
 Base.resize!(prop::ArrayProperty, len) = resize!(prop.data, len)
@@ -80,7 +80,7 @@ Base.summary(prop::ListProperty) = "$(length(prop))-element $(typeof(prop)) \"$(
 Base.length(prop::ListProperty) = length(prop.start_inds)-1
 Base.size(prop::ListProperty) = (length(prop),)
 Base.getindex(prop::ListProperty, i::Int) = prop.data[prop.start_inds[i]:prop.start_inds[i+1]-1]
-Base.linearindexing(prop::ListProperty) = Base.LinearFast()
+@compat Base.IndexStyle(::Type{<:ListProperty}) = IndexLinear()
 # TODO: Do we need Base.setindex!() ?  Hard to provide with above formulation...
 
 # List methods
@@ -198,7 +198,7 @@ Ply() = Ply(Vector{PlyElement}(), Vector{String}())
 function Base.show(io::IO, ply::Ply)
     buf = IOBuffer()
     write_header(ply, buf, true)
-    headerstr = takebuf_string(buf)
+    headerstr = String(take!(buf))
     headerstr = replace(strip(headerstr), "\n", "\n ")
     print(io, "$Ply with header:\n $headerstr")
 end

@@ -44,7 +44,7 @@ ply_type_name(::Int64)    = "int64"
 ply_type_name(::Float32)  = "float32"
 ply_type_name(::Float64)  = "float64"
 
-typealias PlyNativeType Union{UInt8,UInt16,UInt32,UInt64,Int8,Int16,Int32,Int64,Float32,Float64}
+@compat const PlyNativeType = Union{UInt8,UInt16,UInt32,UInt64,Int8,Int16,Int32,Int64,Float32,Float64}
 
 ply_type_name{T<:PlyNativeType}(A::AbstractArray{T}) = ply_type_name(T)
 
@@ -56,7 +56,10 @@ const _host_is_little_endian = (ENDIAN_BOM == 0x04030201)
 
 
 function read_header(ply_file)
-    @assert readline(ply_file) == "ply\n"
+    firstline = Compat.readline(ply_file)
+    if firstline != "ply"
+        throw(ErrorException("Expected \"ply\" header, got \"$firstline\""))
+    end
     element_name = ""
     element_numel = 0
     element_props = Vector{AbstractVector}()
@@ -64,7 +67,7 @@ function read_header(ply_file)
     comments = PlyComment[]
     format = nothing
     while true
-        line = strip(readline(ply_file))
+        line = Compat.readline(ply_file)
         if line == "end_header"
             break
         elseif startswith(line, "comment")
@@ -72,7 +75,9 @@ function read_header(ply_file)
         elseif startswith(line, "format")
             tok, format_type, format_version = split(line)
             @assert tok == "format"
-            @assert format_version == "1.0"
+            if format_version != "1.0"
+                throw(ErrorException("Expected ply version 1.0, got $format_version"))
+            end
             format = format_type == "ascii"                ? Format_ascii :
                      format_type == "binary_little_endian" ? Format_binary_little :
                      format_type == "binary_big_endian"    ? Format_binary_big :

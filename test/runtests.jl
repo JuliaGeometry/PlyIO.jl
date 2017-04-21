@@ -1,6 +1,7 @@
 using PlyIO
 using StaticArrays
 using Base.Test
+using Compat
 
 @testset "PlyIO" begin
 
@@ -22,7 +23,7 @@ using Base.Test
 
     buf = IOBuffer()
     save_ply(ply, buf, ascii=true)
-    str = takebuf_string(buf)
+    str = String(take!(buf))
     open("simple_test_tmp.ply", "w") do fid
         write(fid, str)
     end
@@ -58,7 +59,7 @@ end
 
     buf = IOBuffer()
     save_ply(ply, buf, ascii=true)
-    str = takebuf_string(buf)
+    str = String(take!(buf))
     open("empty_test_tmp.ply", "w") do fid
         write(fid, str)
     end
@@ -114,7 +115,7 @@ end
                                                    UInt8, UInt16, UInt32, UInt64,
                                                    Float32, Float64]
         ply = Ply()
-        arrayprop = zeros(proptype, 1) + 42
+        arrayprop = fill(proptype(42), 1)
         listprop = ListProperty("listprop", proptype<:Integer ? proptype : Int32, proptype)
         push!(listprop, collect(proptype, 1:10))
         push!(ply, PlyElement("test", ArrayProperty("arrayprop", arrayprop), listprop))
@@ -141,7 +142,7 @@ end
                          ))
     buf = IOBuffer()
     save_ply(ply, buf, ascii=true)
-    str = takebuf_string(buf)
+    str = String(take!(buf))
     open("SVector_properties_test_tmp.ply", "w") do fid
         write(fid, str)
     end
