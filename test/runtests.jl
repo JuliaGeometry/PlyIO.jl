@@ -165,4 +165,52 @@ end
 end
 
 
+@testset "Malformed ply headers" begin
+    @test_throws ErrorException load_ply(IOBuffer("asdf"))
+
+    @test_throws ErrorException load_ply(IOBuffer("ply"))
+
+    @test_throws ErrorException load_ply(IOBuffer("""
+                                                  ply
+                                                  format ascii 2.0
+                                                  """))
+
+    @test_throws ErrorException load_ply(IOBuffer("""
+                                                  ply
+                                                  format 1.0
+                                                  end_header"""))
+
+    @test_throws ErrorException load_ply(IOBuffer("""
+                                                  ply
+                                                  format ascii 1.0
+                                                  asdf
+                                                  end_header"""))
+
+    @test_throws ErrorException load_ply(IOBuffer("""
+                                                  ply
+                                                  format ascii 1.0
+                                                  element el
+                                                  end_header"""))
+
+    @test_throws ErrorException load_ply(IOBuffer("""
+                                                  ply
+                                                  format ascii 1.0
+                                                  property float x
+                                                  end_header"""))
+
+    @test_throws ErrorException load_ply(IOBuffer("""
+                                                  ply
+                                                  format ascii 1.0
+                                                  element el 0
+                                                  property
+                                                  end_header"""))
+
+    @test_throws ErrorException load_ply(IOBuffer("""
+                                                  ply
+                                                  format ascii 1.0
+                                                  element el 0
+                                                  property list
+                                                  end_header"""))
+end
+
 end # @testset PlyIO

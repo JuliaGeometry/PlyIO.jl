@@ -68,43 +68,54 @@ function read_header(ply_file)
     format = nothing
     while true
         line = Compat.readline(ply_file)
-        if line == "end_header"
+        if line == "" && eof(ply_file)
+            throw(ErrorException("Unexpected end of file reading ply header"))
+        elseif line == "end_header"
             break
         elseif startswith(line, "comment")
             push!(comments, PlyComment(strip(line[8:end]), length(elements)+1))
-        elseif startswith(line, "format")
-            tok, format_type, format_version = split(line)
-            @assert tok == "format"
-            if format_version != "1.0"
-                throw(ErrorException("Expected ply version 1.0, got $format_version"))
-            end
-            format = format_type == "ascii"                ? Format_ascii :
-                     format_type == "binary_little_endian" ? Format_binary_little :
-                     format_type == "binary_big_endian"    ? Format_binary_big :
-                     error("Unknown ply format $format_type")
-        elseif startswith(line, "element")
-            if !isempty(element_name)
-                push!(elements, PlyElement(element_name, element_numel, element_props))
-                element_props = Vector{AbstractVector}()
-            end
-            tok, element_name, element_numel = split(line)
-            @assert tok == "element"
-            element_numel = parse(Int,element_numel)
-        elseif startswith(line, "property")
+        else
             tokens = split(line)
-            @assert tokens[1] == "property"
-            if tokens[2] == "list"
-                count_type_name, type_name, prop_name = tokens[3:end]
-                count_type = ply_type(count_type_name)
-                type_ = ply_type(type_name)
-                push!(element_props, ListProperty(prop_name, ply_type(count_type_name), ply_type(type_name)))
+            length(tokens) > 2 || throw(ErrorException("Bad ply header, line: \"$line\""))
+            if tokens[1] == "format"
+                length(tokens) == 3 || throw(ErrorException("Bad ply header, line: \"$line\""))
+                _, format_type, format_version = tokens
+                if format_version != "1.0"
+                    throw(ErrorException("Expected ply version 1.0, got $format_version"))
+                end
+                format = format_type == "ascii"                ? Format_ascii :
+                        format_type == "binary_little_endian" ? Format_binary_little :
+                        format_type == "binary_big_endian"    ? Format_binary_big :
+                        error("Unknown ply format $format_type")
+            elseif tokens[1] == "element"
+                if !isempty(element_name)
+                    push!(elements, PlyElement(element_name, element_numel, element_props))
+                    element_props = Vector{AbstractVector}()
+                end
+                length(tokens) == 3 || throw(ErrorException("Bad ply header, line: \"$line\""))
+                _, element_name, element_numel = tokens
+                element_numel = parse(Int,element_numel)
+            elseif tokens[1] == "property"
+                !isempty(element_name) || throw(ErrorException("Bad ply header: property before first element"))
+                if tokens[2] == "list"
+                    length(tokens) == 5 || throw(ErrorException("Bad ply header, line: \"$line\""))
+                    count_type_name, type_name, prop_name = tokens[3:end]
+                    count_type = ply_type(count_type_name)
+                    type_ = ply_type(type_name)
+                    push!(element_props, ListProperty(prop_name, ply_type(count_type_name), ply_type(type_name)))
+                else
+                    length(tokens) == 3 || throw(ErrorException("Bad ply header, line: \"$line\""))
+                    type_name, prop_name = tokens[2:end]
+                    push!(element_props, ArrayProperty(prop_name, ply_type(type_name)))
+                end
             else
-                type_name, prop_name = tokens[2:end]
-                push!(element_props, ArrayProperty(prop_name, ply_type(type_name)))
+                throw(ErrorException("Bad ply header, line: \"$line\""))
             end
         end
     end
-    push!(elements, PlyElement(element_name, element_numel, element_props))
+    if !isempty(element_name)
+        push!(elements, PlyElement(element_name, element_numel, element_props))
+    end
     elements, format, comments
 end
 
