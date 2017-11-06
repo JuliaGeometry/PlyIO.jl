@@ -9,7 +9,7 @@ Return the name that `data` is associated with when serialized in a ply file
 function plyname
 end
 
-@compat const PropNameList = Union{AbstractVector,Tuple}
+const PropNameList = Union{AbstractVector,Tuple}
 
 #--------------------------------------------------
 """
