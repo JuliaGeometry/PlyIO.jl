@@ -18,14 +18,14 @@ const PropNameList = Union{AbstractVector,Tuple}
 A ply `property \$T \$name`, modelled as an abstract vector, with a name which
 can be retrieved using `plyname()`.
 """
-type ArrayProperty{T,Name} <: AbstractVector{T}
+mutable struct ArrayProperty{T,Name} <: AbstractVector{T}
     name::Name
     data::Vector{T}
 end
 
 #=
 # FIXME: Ambiguous constructor
-function ArrayProperty{T}(names::PropNameList, data::AbstractVector{T})
+function ArrayProperty(names::PropNameList, data::AbstractVector{T}) where {T}
     if length(names) != length(T)
         error("Number of property names in $names does not match length($T)")
     end
@@ -33,7 +33,7 @@ function ArrayProperty{T}(names::PropNameList, data::AbstractVector{T})
 end
 =#
 
-ArrayProperty{T}(name::AbstractString, ::Type{T}) = ArrayProperty(String(name), Vector{T}())
+ArrayProperty(name::AbstractString, ::Type{T}) where {T} = ArrayProperty(String(name), Vector{T}())
 
 Base.summary(prop::ArrayProperty) = "$(length(prop))-element $(typeof(prop)) \"$(plyname(prop))\""
 
@@ -59,13 +59,13 @@ plyname(prop::ArrayProperty) = prop.name
 A ply `property list \$S \$T \$name`, modelled as a abstract vector of vectors,
 with a name which can be retrieved using `plyname()`.
 """
-type ListProperty{S,T} <: AbstractVector{Vector{T}}
+mutable struct ListProperty{S,T} <: AbstractVector{Vector{T}}
     name::String
     start_inds::Vector{Int}
     data::Vector{T}
 end
 
-ListProperty{S,T}(name, ::Type{S}, ::Type{T}) = ListProperty{S,T}(String(name), ones(Int,1), Vector{T}())
+ListProperty(name, ::Type{S}, ::Type{T}) where {S,T} = ListProperty{S,T}(String(name), ones(Int,1), Vector{T}())
 
 function ListProperty(name::AbstractString, a::AbstractVector)
     # Construct list from an array of arrays
@@ -109,7 +109,7 @@ the array interface, or looked up by indexing with a string.
 The expected length `len` is used if it is set, otherwise the length shared by
 the property vectors is used.
 """
-type PlyElement
+mutable struct PlyElement
     name::String
     prior_len::Int  # Length as expected, or as read from file
     properties::Vector
@@ -154,10 +154,14 @@ function Base.getindex(element::PlyElement, prop_name)
 end
 
 # List methods
-Base.start(elem::PlyElement) = start(elem.properties)
-Base.next(elem::PlyElement, state) = next(elem.propertes, state)
-Base.done(elem::PlyElement, state) = done(elem.propertes, state)
-Base.push!(elem::PlyElement, prop) = (push!(elem.properties, prop); elem)
+if VERSION >= v"0.7"
+    Base.iterate(elem::PlyElement, s...) = iterate(elem.properties, s...)
+else
+    Base.start(elem::PlyElement) = start(elem.properties)
+    Base.next(elem::PlyElement, state) = next(elem.propertes, state)
+    Base.done(elem::PlyElement, state) = done(elem.propertes, state)
+    Base.push!(elem::PlyElement, prop) = (push!(elem.properties, prop); elem)
+end
 
 # Ply methods
 plyname(elem::PlyElement) = elem.name
@@ -169,7 +173,7 @@ plyname(elem::PlyElement) = elem.name
 
 A ply comment.
 """
-immutable PlyComment
+struct PlyComment
     comment::String
     location::Int # index of previous element
 end
@@ -188,7 +192,7 @@ contents of the header.  Ply elements and comments can be added using
 `push!()`, elements can be iterated over with the standard iterator
 interface, and looked up by indexing with a string.
 """
-type Ply
+mutable struct Ply
     elements::Vector{PlyElement}
     comments::Vector{PlyComment}
 end
@@ -218,7 +222,10 @@ function Base.getindex(ply::Ply, elem_name::AbstractString)
 end
 
 Base.length(ply::Ply) = length(ply.elements)
-Base.start(ply::Ply) = start(ply.elements)
-Base.next(ply::Ply, state) = next(ply.elements, state)
-Base.done(ply::Ply, state) = done(ply.elements, state)
-
+if VERSION >= v"0.7"
+    Compat.iterate(ply::Ply, s...) = iterate(ply.elements, s...)
+else
+    Base.start(ply::Ply) = start(ply.elements)
+    Base.next(ply::Ply, state) = next(ply.elements, state)
+    Base.done(ply::Ply, state) = done(ply.elements, state)
+end

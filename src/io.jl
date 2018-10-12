@@ -46,7 +46,7 @@ ply_type_name(::Float64)  = "float64"
 
 const PlyNativeType = Union{UInt8,UInt16,UInt32,UInt64,Int8,Int16,Int32,Int64,Float32,Float64}
 
-ply_type_name{T<:PlyNativeType}(A::AbstractArray{T}) = ply_type_name(T)
+ply_type_name(A::AbstractArray{T}) where {T<:PlyNativeType} = ply_type_name(T)
 
 ply_type_name(A::AbstractArray) = !isempty(A) ? ply_type_name(A[1]) :
                                   error("Unknown ply element type name for empty array of type $(typeof(A))")
@@ -124,13 +124,13 @@ function write_header_field(stream::IO, prop::ArrayProperty)
     println(stream, "property $(ply_type_name(prop.data)) $(prop.name)")
 end
 
-function write_header_field{T,Names<:PropNameList}(stream::IO, prop::ArrayProperty{T,Names})
+function write_header_field(stream::IO, prop::ArrayProperty{T,Names}) where {T,Names<:PropNameList}
     for n in prop.name
         println(stream, "property $(ply_type_name(prop.data)) $(n)")
     end
 end
 
-function write_header_field{S}(stream::IO, prop::ListProperty{S})
+function write_header_field(stream::IO, prop::ListProperty{S}) where {S}
     println(stream, "property list $(ply_type_name(S)) $(ply_type_name(prop.data)) $(prop.name)")
 end
 
@@ -165,7 +165,7 @@ end
 #-------------------------------------------------------------------------------
 # ASCII IO for properties and elements
 
-function parse_ascii{T}(::Type{T}, io::IO)
+function parse_ascii(::Type{T}, io::IO) where {T}
     # FIXME: sadly unbuffered, will probably have terrible performance.
     buf = UInt8[]
     while !eof(io)
@@ -181,10 +181,10 @@ function parse_ascii{T}(::Type{T}, io::IO)
     parse(T, String(buf))
 end
 
-function read_ascii_value!{T}(stream::IO, prop::ArrayProperty{T}, index)
+function read_ascii_value!(stream::IO, prop::ArrayProperty{T}, index) where {T}
     prop.data[index] = parse_ascii(T, stream)
 end
-function read_ascii_value!{S,T}(stream::IO, prop::ListProperty{S,T}, index)
+function read_ascii_value!(stream::IO, prop::ListProperty{S,T}, index) where {S,T}
     N = parse_ascii(S, stream)
     prop.start_inds[index+1] = prop.start_inds[index] + N
     for i=1:N
@@ -198,20 +198,20 @@ end
 
 #--------------------------------------------------
 # property IO
-function read_binary_value!{T}(stream::IO, prop::ArrayProperty{T}, index)
+function read_binary_value!(stream::IO, prop::ArrayProperty{T}, index) where {T}
     prop.data[index] = read(stream, T)
 end
-function read_binary_value!{S,T}(stream::IO, prop::ListProperty{S,T}, index)
+function read_binary_value!(stream::IO, prop::ListProperty{S,T}, index) where {S,T}
     N = read(stream, S)
     prop.start_inds[index+1] = prop.start_inds[index] + N
-    inds = read(stream, T, Int(N))
+    inds = read!(stream, Vector{T}(undef, Int(N)))
     append!(prop.data, inds)
 end
 
 function write_binary_value(stream::IO, prop::ArrayProperty, index)
     write(stream, prop.data[index])
 end
-function write_binary_value{S}(stream::IO, prop::ListProperty{S}, index)
+function write_binary_value(stream::IO, prop::ListProperty{S}, index) where {S}
     len = prop.start_inds[index+1] - prop.start_inds[index]
     write(stream, convert(S, len))
     esize = sizeof(eltype(prop.data))
@@ -230,7 +230,7 @@ end
 function write_ascii_value(stream::IO, prop::ArrayProperty, index)
     print(stream, prop.data[index])
 end
-function write_ascii_value{T<:AbstractArray}(stream::IO, prop::ArrayProperty{T}, index)
+function write_ascii_value(stream::IO, prop::ArrayProperty{<:AbstractArray}, index)
     p = prop.data[index]
     for i = 1:length(p)
         if i != 1
@@ -290,7 +290,7 @@ end
 # for elements constructed of simple arrays with homogenous type -
 # serialization speed generally seems to be limited by the many individual
 # calls to write() with small buffers.
-function write_binary_values{T}(stream::IO, elen, props::ArrayProperty{T}...)
+function write_binary_values(stream::IO, elen, props::ArrayProperty{T}...) where {T}
     batchsize = 100
     numprops = length(props)
     buf = Matrix{T}(numprops, batchsize)
