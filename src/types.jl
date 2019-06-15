@@ -41,7 +41,7 @@ Base.summary(prop::ArrayProperty) = "$(length(prop))-element $(typeof(prop)) \"$
 Base.size(prop::ArrayProperty) = size(prop.data)
 Base.getindex(prop::ArrayProperty, i::Int) = prop.data[i]
 Base.setindex!(prop::ArrayProperty, v, i::Int) = prop.data[i] = v
-@compat Base.IndexStyle(::Type{<:ArrayProperty}) = IndexLinear()
+Base.IndexStyle(::Type{<:ArrayProperty}) = IndexLinear()
 
 # List methods
 Base.resize!(prop::ArrayProperty, len) = resize!(prop.data, len)
@@ -80,7 +80,7 @@ Base.summary(prop::ListProperty) = "$(length(prop))-element $(typeof(prop)) \"$(
 Base.length(prop::ListProperty) = length(prop.start_inds)-1
 Base.size(prop::ListProperty) = (length(prop),)
 Base.getindex(prop::ListProperty, i::Int) = prop.data[prop.start_inds[i]:prop.start_inds[i+1]-1]
-@compat Base.IndexStyle(::Type{<:ListProperty}) = IndexLinear()
+Base.IndexStyle(::Type{<:ListProperty}) = IndexLinear()
 # TODO: Do we need Base.setindex!() ?  Hard to provide with above formulation...
 
 # List methods
@@ -154,14 +154,7 @@ function Base.getindex(element::PlyElement, prop_name)
 end
 
 # List methods
-if VERSION >= v"0.7"
-    Base.iterate(elem::PlyElement, s...) = iterate(elem.properties, s...)
-else
-    Base.start(elem::PlyElement) = start(elem.properties)
-    Base.next(elem::PlyElement, state) = next(elem.propertes, state)
-    Base.done(elem::PlyElement, state) = done(elem.propertes, state)
-    Base.push!(elem::PlyElement, prop) = (push!(elem.properties, prop); elem)
-end
+Base.iterate(elem::PlyElement, s...) = iterate(elem.properties, s...)
 
 # Ply methods
 plyname(elem::PlyElement) = elem.name
@@ -222,10 +215,4 @@ function Base.getindex(ply::Ply, elem_name::AbstractString)
 end
 
 Base.length(ply::Ply) = length(ply.elements)
-if VERSION >= v"0.7"
-    Compat.iterate(ply::Ply, s...) = iterate(ply.elements, s...)
-else
-    Base.start(ply::Ply) = start(ply.elements)
-    Base.next(ply::Ply, state) = next(ply.elements, state)
-    Base.done(ply::Ply, state) = done(ply.elements, state)
-end
+Base.iterate(ply::Ply, s...) = iterate(ply.elements, s...)

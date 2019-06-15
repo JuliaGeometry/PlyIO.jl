@@ -56,7 +56,7 @@ const _host_is_little_endian = (ENDIAN_BOM == 0x04030201)
 
 
 function read_header(ply_file)
-    firstline = Compat.readline(ply_file)
+    firstline = readline(ply_file)
     if firstline != "ply"
         throw(ErrorException("Expected \"ply\" header, got \"$firstline\""))
     end
@@ -67,7 +67,7 @@ function read_header(ply_file)
     comments = PlyComment[]
     format = nothing
     while true
-        line = Compat.readline(ply_file)
+        line = readline(ply_file)
         if line == "" && eof(ply_file)
             throw(ErrorException("Unexpected end of file reading ply header"))
         elseif line == "end_header"

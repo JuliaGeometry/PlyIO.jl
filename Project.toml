@@ -1,0 +1,15 @@
+name = "PlyIO"
+uuid = "42171d58-473b-503a-8d5f-782019eb09ec"
+version = "1.0.1"
+
+[deps]
+
+[compat]
+julia = "≥ 1"
+
+[extras]
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["StaticArrays", "Test"]

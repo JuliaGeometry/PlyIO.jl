@@ -1,7 +1,6 @@
 using PlyIO
 using StaticArrays
-using Compat
-using Compat.Test
+using Test
 
 @testset "PlyIO" begin
 
