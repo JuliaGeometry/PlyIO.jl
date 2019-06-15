@@ -4,9 +4,10 @@ os:
   - linux
   - osx
 julia:
-  - 0.6
   - 0.7
   - 1.0
+  - 1.1
+  - 1.2
   - nightly
 branches:
   only:
@@ -22,6 +23,6 @@ notifications:
 #  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
 #  - julia -e 'Pkg.clone(pwd()); Pkg.build("PlyIO"); Pkg.test("PlyIO"; coverage=true)'
 after_success:
-  - if [ $TRAVIS_JULIA_VERSION = "1.0" ] && [ $TRAVIS_OS_NAME = "linux" ]; then
-      julia -e 'cd(Pkg.dir("MicroLogging")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+  - if [ $TRAVIS_JULIA_VERSION = "1.1" ] && [ $TRAVIS_OS_NAME = "linux" ]; then
+      julia -e 'cd(Pkg.dir("PlyIO")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
     fi
