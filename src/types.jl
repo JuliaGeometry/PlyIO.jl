@@ -203,7 +203,7 @@ function Base.show(io::IO, ply::Ply)
     buf = IOBuffer()
     write_header(ply, buf, true)
     headerstr = String(take!(buf))
-    headerstr = replace(strip(headerstr), "\n", "\n ")
+    headerstr = replace(strip(headerstr), "\n"=>"\n ")
     print(io, "$Ply with header:\n $headerstr")
 end
 
