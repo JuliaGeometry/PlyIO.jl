@@ -74,6 +74,8 @@ function read_header(ply_file)
             break
         elseif startswith(line, "comment")
             push!(comments, PlyComment(strip(line[8:end]), length(elements)+1))
+        elseif startswith(line, "obj_info")
+            push!(comments, PlyComment(strip(line), length(elements)+1))
         else
             tokens = split(line)
             length(tokens) > 2 || throw(ErrorException("Bad ply header, line: \"$line\""))
