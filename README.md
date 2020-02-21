@@ -133,3 +133,9 @@ header.
 
 To read and write `Ply` objects from files or `IO` streams, use the functions
 `load_ply()` and `save_ply()`.
+
+
+## Acknowledgements
+
+[![FugroRoames](https://avatars.githubusercontent.com/FugroRoames?s=150)](https://github.com/FugroRoames)
+
