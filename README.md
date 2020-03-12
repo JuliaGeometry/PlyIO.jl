@@ -4,8 +4,7 @@
 [Ply](http://paulbourke.net/dataformats/ply/) polygon file format, also called
 the Stanford triangle format.
 
-[![linux/osx build status](https://travis-ci.org/FugroRoames/PlyIO.jl.svg?branch=master)](https://travis-ci.org/FugroRoames/PlyIO.jl)
-[![windows build status](https://ci.appveyor.com/api/projects/status/y4ycgwp4rm49wrt8?svg=true)](https://ci.appveyor.com/project/c42f/plyio-jl)
+[![Build Status](https://github.com/JuliaGeometry/PlyIO.jl/workflows/CI/badge.svg)](https://github.com/JuliaGeometry/PlyIO.jl/actions?query=workflow%3ACI)
 
 ## Quick start
 
