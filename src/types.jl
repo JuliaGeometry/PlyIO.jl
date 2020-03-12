@@ -162,18 +162,28 @@ plyname(elem::PlyElement) = elem.name
 
 #--------------------------------------------------
 """
-    PlyComment(string)
+    PlyComment(string; [obj_info=false])
 
 A ply comment.
+
+Nonstandard [obj_info header lines](
+http://docs.pointclouds.org/1.5.1/structpcl_1_1io_1_1ply_1_1obj__info.html)
+may be represented by setting obj_info flag.
 """
 struct PlyComment
     comment::String
-    location::Int # index of previous element
+    obj_info::Bool # Set for comment-like "obj_info" lines
+    location::Int # index of previous element (TODO: move this out of the comment)
 end
 
-PlyComment(string::AbstractString) = PlyComment(string, -1)
+PlyComment(string::AbstractString; obj_info::Bool=false) =
+    PlyComment(string, obj_info, -1)
 
-Base.:(==)(a::PlyComment, b::PlyComment) = a.comment == b.comment && a.location == b.location
+function Base.:(==)(a::PlyComment, b::PlyComment)
+    a.comment == b.comment         &&
+    a.obj_info == b.obj_info &&
+    a.location == b.location
+end
 
 
 #--------------------------------------------------
@@ -202,7 +212,10 @@ end
 
 # List methods
 Base.push!(ply::Ply, el::PlyElement) = (push!(ply.elements, el); ply)
-Base.push!(ply::Ply, c::PlyComment) = (push!(ply.comments, PlyComment(c.comment, length(ply.elements)+1)); ply)
+function Base.push!(ply::Ply, c::PlyComment)
+    push!(ply.comments, PlyComment(c.comment, c.obj_info, length(ply.elements)+1))
+    ply
+end
 
 # Element search and iteration
 function Base.getindex(ply::Ply, elem_name::AbstractString)

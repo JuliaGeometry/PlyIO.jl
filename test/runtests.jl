@@ -31,6 +31,7 @@ end
                           ArrayProperty("y", Float32[1.1,2.2,3.3]),
                           ListProperty("a_list", Vector{Int64}[[0,1], [2,3,4], [5]])))
     push!(ply, PlyComment("PlyComment about B"))
+    push!(ply, PlyComment("PlyObjInfo", obj_info=true))
     push!(ply, PlyComment("PlyComment about B 2"))
     push!(ply, PlyElement("B",
                           ArrayProperty("r", Int16[-1,1]),
@@ -53,6 +54,7 @@ end
     property float32 y
     property list int32 int64 a_list
     comment PlyComment about B
+    obj_info PlyObjInfo
     comment PlyComment about B 2
     element B 2
     property int16 r
@@ -100,6 +102,7 @@ end
 
         push!(ply, PlyComment("A comment"))
         push!(ply, PlyComment("Blah blah"))
+        push!(ply, PlyComment("x=10", obj_info=true))
 
         nverts = 10
 
@@ -124,7 +127,9 @@ end
         @test newply["vertex"]["y"] == y
         @test newply["face"]["vertex_index"] == vertex_index
 
-        @test newply.comments == [PlyComment("A comment",1), PlyComment("Blah blah",1)]
+        @test newply.comments == [PlyComment("A comment",false,1),
+                                  PlyComment("Blah blah",false,1),
+                                  PlyComment("x=10",true,1)]
     end
 
     @testset "proptype=$proptype" for proptype in [Int8, Int16, Int32, Int64,

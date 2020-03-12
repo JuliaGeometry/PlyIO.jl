@@ -73,9 +73,9 @@ function read_header(ply_file)
         elseif line == "end_header"
             break
         elseif startswith(line, "comment")
-            push!(comments, PlyComment(strip(line[8:end]), length(elements)+1))
+            push!(comments, PlyComment(strip(line[8:end]), false, length(elements)+1))
         elseif startswith(line, "obj_info")
-            push!(comments, PlyComment(strip(line), length(elements)+1))
+            push!(comments, PlyComment(strip(line[9:end]), true, length(elements)+1))
         else
             tokens = split(line)
             length(tokens) > 2 || throw(ErrorException("Bad ply header, line: \"$line\""))
@@ -136,6 +136,10 @@ function write_header_field(stream::IO, prop::ListProperty{S}) where {S}
     println(stream, "property list $(ply_type_name(S)) $(ply_type_name(prop.data)) $(prop.name)")
 end
 
+function write_header_field(stream::IO, comment::PlyComment)
+    prefix = comment.obj_info ? "obj_info " : "comment "
+    println(stream, prefix, comment.comment)
+end
 
 function write_header(ply, stream::IO, ascii)
     println(stream, "ply")
@@ -148,7 +152,7 @@ function write_header(ply, stream::IO, ascii)
     commentidx = 1
     for (elemidx,element) in enumerate(ply.elements)
         while commentidx <= length(ply.comments) && ply.comments[commentidx].location == elemidx
-            println(stream, "comment ", ply.comments[commentidx].comment)
+            write_header_field(stream, ply.comments[commentidx])
             commentidx += 1
         end
         println(stream, "element $(element.name) $(length(element))")
@@ -157,7 +161,7 @@ function write_header(ply, stream::IO, ascii)
         end
     end
     while commentidx <= length(ply.comments)
-        println(stream, "comment ", ply.comments[commentidx].comment)
+        write_header_field(stream, ply.comments[commentidx])
         commentidx += 1
     end
     println(stream, "end_header")
