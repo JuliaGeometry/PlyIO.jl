@@ -299,7 +299,7 @@ end
 function write_binary_values(stream::IO, elen, props::ArrayProperty{T}...) where {T}
     batchsize = 100
     numprops = length(props)
-    buf = Matrix{T}(numprops, batchsize)
+    buf = Matrix{T}(undef, numprops, batchsize)
     for i=1:batchsize:elen
         thisbatchsize = min(batchsize, elen-i+1)
         for j=1:numprops
