@@ -150,6 +150,24 @@ end
         @test typeof(newply["test"]["listprop"][1]) == Vector{proptype}
         @test newply["test"]["listprop"] == listprop
     end
+
+    @testset "Batched writes for homogenous properties" begin
+        ply = Ply()
+        nverts = 1000
+        x, y, z = [rand(nverts) for _ = 1:3]
+        push!(ply, PlyElement("vertex",
+                              ArrayProperty("x", x),
+                              ArrayProperty("y", y),
+                              ArrayProperty("z", z)))
+        io = IOBuffer()
+        save_ply(ply, io)
+        seek(io, 0)
+        newply = load_ply(io)
+        @test length(newply) == 1
+        @test newply["vertex"]["x"] == x
+        @test newply["vertex"]["y"] == y
+        @test newply["vertex"]["z"] == z
+    end
 end
 
 
