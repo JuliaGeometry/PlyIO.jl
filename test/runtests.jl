@@ -61,11 +61,11 @@ end
     property int16 g
     comment Final comment
     end_header
-    1	1.1	2 0 1
-    2	2.2	3 2 3 4
-    3	3.3	1 5
-    -1	1
-    1	1
+    1 1.1 2 0 1
+    2 2.2 3 2 3 4
+    3 3.3 1 5
+    -1 1
+    1 1
     """
 end
 
@@ -90,10 +90,7 @@ end
     element B 3
     property list int32 int64 a_list
     end_header
-    0 
-    0 
-    0 
-    """
+    0 \n0 \n0 \n"""
 end
 
 @testset "roundtrip" begin
@@ -197,9 +194,9 @@ end
     property uint8 g
     property uint8 b
     end_header
-    1.0	2.0
-    3.0	4.0
-    1	2	3
+    1.0 2.0
+    3.0 4.0
+    1 2 3
     """
 end
 
