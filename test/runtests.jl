@@ -90,7 +90,10 @@ end
     element B 3
     property list int32 int64 a_list
     end_header
-    0 \n0 \n0 \n"""
+    0 
+    0 
+    0 
+    """
 end
 
 @testset "roundtrip" begin
