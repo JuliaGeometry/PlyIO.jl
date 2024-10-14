@@ -187,6 +187,8 @@ end
 
 
 #--------------------------------------------------
+@enum Format Format_ascii Format_binary_little Format_binary_big
+
 """
     Ply()
 
@@ -196,15 +198,19 @@ contents of the header.  Ply elements and comments can be added using
 interface, and looked up by indexing with a string.
 """
 mutable struct Ply
+    format::Format
     elements::Vector{PlyElement}
     comments::Vector{PlyComment}
 end
 
-Ply() = Ply(Vector{PlyElement}(), Vector{String}())
+Ply(format=Format_ascii) = Ply(format, Vector{PlyElement}(), Vector{String}())
+
+# For compat
+Ply(elements::Vector{PlyElement}, comments::Vector{PlyComment}) = Ply(Format_ascii, elements, comments)
 
 function Base.show(io::IO, ply::Ply)
     buf = IOBuffer()
-    write_header(ply, buf, true)
+    write_header(ply, buf)
     headerstr = String(take!(buf))
     headerstr = replace(strip(headerstr), "\n"=>"\n ")
     print(io, "$Ply with header:\n $headerstr")

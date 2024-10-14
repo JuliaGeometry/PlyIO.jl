@@ -130,6 +130,11 @@ end
         @test newply.comments == [PlyComment("A comment",false,1),
                                   PlyComment("Blah blah",false,1),
                                   PlyComment("x=10",true,1)]
+        @test (newply.format == PlyIO.Format_ascii) == test_ascii
+
+        save_ply(newply, "roundtrip_test_tmp_2.ply")
+        newply_2 = load_ply("roundtrip_test_tmp_2.ply")
+        @test (newply_2.format == PlyIO.Format_ascii) == test_ascii
     end
 
     @testset "proptype=$proptype" for proptype in [Int8, Int16, Int32, Int64,
