@@ -1,6 +1,6 @@
 The PlyIO.jl package is licensed under the MIT "Expat" License:
 
-> Copyright (c) 2016: Chris Foster.
+> Copyright (c) 2016: Claire Foster.
 > 
 > Permission is hereby granted, free of charge, to any person obtaining a copy
 > of this software and associated documentation files (the "Software"), to deal
