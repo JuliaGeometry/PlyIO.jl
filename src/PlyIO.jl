@@ -1,13 +1,10 @@
-__precompile__()
-
 module PlyIO
 
 # Types for the ply data model
 export Ply, PlyElement, PlyComment, ArrayProperty, ListProperty
-export plyname  # Is there something in base we could overload for this?
+export plyname
 
 # High level file IO
-# (TODO: FileIO?)
 export load_ply, save_ply
 
 include("types.jl")
