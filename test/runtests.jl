@@ -173,6 +173,23 @@ end
         @test newply["vertex"]["y"] == y
         @test newply["vertex"]["z"] == z
     end
+
+    @testset "Fallback for binary write of many inhomogeneous properties" begin
+        ply = Ply()
+        push!(ply, PlyElement("test", 
+                              (ArrayProperty("$i", UInt8[i]) for i = 1:8)..., 
+                              (ArrayProperty("$i", Int8[i]) for i = 9:17)...))
+        io = IOBuffer()
+        save_ply(ply, io; ascii = false)
+        seek(io, 0)
+        newply = load_ply(io)
+        @test length(newply) == 1
+        a = newply["test"]
+        for i = 1:17
+            T = i <= 8 ? UInt8 : Int8
+            @test only(a["$i"]) === T(i)
+        end
+    end
 end
 
 

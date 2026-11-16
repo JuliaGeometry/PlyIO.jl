@@ -270,7 +270,7 @@ end
 function write_binary_values(stream::IO, elen, props...)
     for i=1:elen
         for p in props
-            write_binary_value(stream, property, i)
+            write_binary_value(stream, p, i)
         end
     end
 end
