@@ -124,7 +124,7 @@ function write_header_field(stream::IO, prop::ArrayProperty)
     println(stream, "property $(ply_type_name(prop.data)) $(prop.name)")
 end
 
-function write_header_field(stream::IO, prop::ArrayProperty{T,Names}) where {T,Names<:PropNameList}
+function write_header_field(stream::IO, prop::ArrayProperty{T,A,Names}) where {T,A<:AbstractVector{T},Names<:PropNameList}
     for n in prop.name
         println(stream, "property $(ply_type_name(prop.data)) $(n)")
     end
