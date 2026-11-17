@@ -88,7 +88,7 @@ julia> ply["vertex"]
 PlyElement "vertex" of length 1000 with properties ["x", "y", "z", "r", "g", "b"]
 
 julia> ply["vertex"]["x"]
-1000-element PlyIO.ArrayProperty{Float64,String} "x":
+1000-element ArrayProperty{Float64, Vector{Float64}, String}:
  -0.472592
   1.04326
  -0.982202
@@ -111,7 +111,7 @@ values.
 As described, ply is quite a generic format but it's primarily used for
 geometric data. For this use there are some loose
 [naming conventions](http://paulbourke.net/dataformats/ply/) which attach
-geometric meaning to certian combinations of element and property names.
+geometric meaning to certain combinations of element and property names.
 Unfortunately there's no official standard.
 
 ### Document object model
