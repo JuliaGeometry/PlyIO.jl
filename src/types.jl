@@ -18,9 +18,9 @@ const PropNameList = Union{AbstractVector,Tuple}
 A ply `property \$T \$name`, modelled as an abstract vector, with a name which
 can be retrieved using `plyname()`.
 """
-mutable struct ArrayProperty{T,A<:AbstractVector{T},Name} <: AbstractVector{T}
+mutable struct ArrayProperty{T,V<:AbstractVector{T},Name} <: AbstractVector{T}
     name::Name
-    data::A
+    data::V
 end
 
 #=
